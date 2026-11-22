@@ -4,7 +4,23 @@
 
 A planner selecting a product family should be able to follow its monthly shipments through October 2026, see how stockouts changed the estimate of customer requests, and inspect the forecast through May 2028. A manager should see the same figures roll up to the company total. The submission CSV and the dashboard both read the same published forecast.
 
-The deliverable is a local, one-week project for one to three people. Core covers all five workstreams. The proposed sequence adds Advanced and Expert capabilities after the end-to-end Core run works. The folder currently contains the [corrected problem statement](../../../Celeris_Demand_Forecasting_Problem_Statement_corrected.md). File sizes, dates and business rules below come from that brief. All model choices, thresholds and screens are proposals. Accuracy, anomaly counts and input coverage require the actual CSVs.
+The planning scope is approximately 600 SKUs across seven product families and six regions. The one-week Core release covers cleaning, anomaly detection, demand-driver analysis, predictive models and an interactive planner dashboard. Advanced and Expert capabilities follow the working Core release. Portfolio size, expected row counts, periods and business rules come from the [corrected problem statement](../../../Celeris_Demand_Forecasting_Problem_Statement_corrected.md).
+
+## Input inventory
+
+The six CSV headers currently visible in `student_data/` identify the following roles. The inventory establishes file identity only. Row counts, actual date coverage and SKU counts are checks for the implementation run.
+
+| Dataset role | File in this checkout | Identifying columns |
+|---|---|---|
+| Historical ERP sales | Missing | `Record_ID`, `Units_Sold`, `Load_Timestamp` |
+| Rows to forecast | `train.csv` | Delivery month, SKU, customer, channel and region with no target column |
+| SKU master | `test.csv` | `Launch_Date`, `EOL_Date`, `Replaces_SKU` |
+| Submission example | `sku_master.csv` | `Units_Sold_Forecast` |
+| Macro indicators | `sample_submission.csv` | `ISM_Manufacturing_PMI`, `EV_Adoption_Index` |
+| Stockout ledger | `macro_indicators.csv` | `Requested_Units`, `Carried_In_Units`, `Shipped_Units` |
+| Events calendar | `inventory_stockouts.csv` | `Event_ID`, `Scope_Type`, `Event_Type` |
+
+At startup, match headers against the seven schemas in the brief, using the full column set to distinguish history from forecast inputs. Record each physical path and resolved role in the run manifest. Report missing or ambiguous roles before fitting. This mapping also handles a later delivery under the expected filenames. Training and backtests depend on the historical ERP extract. The stockout ledger samples constrained months and cannot represent ordinary orders, zero months or portfolio demand.
 
 ## Approaches
 
@@ -31,7 +47,7 @@ flowchart LR
     F --> A
 ```
 
-Treat requested delivery month, SKU and region as the planning key. Preserve source row identifiers through cleaning. Take forecast keys and their customer and channel assignments directly from `test.csv`. The five-row sample supplies the output schema. Building a Cartesian product of SKUs, regions and months would create orders for combinations outside the test set.
+Treat requested delivery month, SKU and region as the planning key. Preserve source row identifiers through cleaning. Take forecast keys and their customer and channel assignments from the file resolved as rows to forecast. The submission example supplies the output schema. Building a Cartesian product of SKUs, regions and months would create orders for combinations outside the test set.
 
 | Published artifact | Grain and contents |
 |---|---|
@@ -42,7 +58,7 @@ Treat requested delivery month, SKU and region as the planning key. Preserve sou
 | `forecast_paths.parquet` (Expert) | Run, draw ID, test key and simulated demand. The dashboard sums the selected leaves within each draw before computing quantiles, including for cross-filtered selections. |
 | `submission.csv` | Exactly `Date,SKU_ID,Region,Units_Sold_Forecast`, in test row order, with a non-negative integer for every row. |
 
-The proposed entry points are `python -m celeris run --data data/raw --out artifacts` and `streamlit run app.py`. The batch command profiles all seven inputs, builds dated folds, refits through October 2026, validates and publishes. Write a new run to a staging directory, then switch the current-run pointer after validation. Store input hashes, configuration, package versions, seed, fold dates, coverage and rule counts in its manifest. The app reads one run per session so a failed or concurrent rebuild cannot mix versions.
+The proposed entry points are `python -m celeris run --data student_data --out artifacts` and `streamlit run app.py`. With all roles resolved, the batch command profiles the inputs, builds dated folds, refits through October 2026, validates and publishes. Write a new run to a staging directory, then switch the current-run pointer after validation. Store input hashes, configuration, package versions, seed, fold dates, coverage and rule counts in its manifest. The app reads one run per session so a failed or concurrent rebuild cannot mix versions.
 
 ## Cleaning and reconstructing demand
 
@@ -108,7 +124,7 @@ The first two optional views are **stockouts and lost sales** (requested, shippe
 
 ## One-week delivery and acceptance
 
-Day 1 assumes the seven CSVs are available in the configured raw-data directory. If they arrive later, use a small schema-matched fixture with a duplicate load, a stockout and carry, a missing month, and a planned launch to exercise the pipeline and screens. Mark fixture runs in the manifest and dashboard. Run every data, submission and accuracy check again on the supplied files before claiming Core completion. Core is the committed acceptance target in this design. Additional tiers depend on the available team and time.
+Start with schema resolution, forecast-key validation and reference-data checks on the six available inputs. While the ERP extract is outstanding, use a labeled fixture to exercise deduplication, stockout carry and missing months. Once history arrives, run the full pipeline and acceptance checks on the supplied data. Core is the one-week acceptance target. Additional tiers depend on the available team and time.
 
 | Day | Work and exit check |
 |---|---|
