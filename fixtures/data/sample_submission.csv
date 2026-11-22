@@ -1,0 +1,77 @@
+Date,SKU_ID,Region,Units_Sold_Forecast
+2026-11,BSS-001,North America,50
+2026-11,HYD-102,Europe,50
+2026-11,PWR-201,North America,50
+2026-11,HYD-101,Europe,0
+2026-12,BSS-001,North America,50
+2026-12,HYD-102,Europe,50
+2026-12,PWR-201,North America,50
+2026-12,HYD-101,Europe,0
+2027-01,BSS-001,North America,50
+2027-01,HYD-102,Europe,50
+2027-01,PWR-201,North America,50
+2027-01,HYD-101,Europe,0
+2027-02,BSS-001,North America,50
+2027-02,HYD-102,Europe,50
+2027-02,PWR-201,North America,50
+2027-02,HYD-101,Europe,0
+2027-03,BSS-001,North America,50
+2027-03,HYD-102,Europe,50
+2027-03,PWR-201,North America,50
+2027-03,HYD-101,Europe,0
+2027-04,BSS-001,North America,50
+2027-04,HYD-102,Europe,50
+2027-04,PWR-201,North America,50
+2027-04,HYD-101,Europe,0
+2027-05,BSS-001,North America,50
+2027-05,HYD-102,Europe,50
+2027-05,PWR-201,North America,50
+2027-05,HYD-101,Europe,0
+2027-06,BSS-001,North America,50
+2027-06,HYD-102,Europe,50
+2027-06,PWR-201,North America,50
+2027-06,HYD-101,Europe,0
+2027-07,BSS-001,North America,50
+2027-07,HYD-102,Europe,50
+2027-07,PWR-201,North America,50
+2027-07,HYD-101,Europe,0
+2027-08,BSS-001,North America,50
+2027-08,HYD-102,Europe,50
+2027-08,PWR-201,North America,50
+2027-08,HYD-101,Europe,0
+2027-09,BSS-001,North America,50
+2027-09,HYD-102,Europe,50
+2027-09,PWR-201,North America,50
+2027-09,HYD-101,Europe,0
+2027-10,BSS-001,North America,50
+2027-10,HYD-102,Europe,50
+2027-10,PWR-201,North America,50
+2027-10,HYD-101,Europe,0
+2027-11,BSS-001,North America,50
+2027-11,HYD-102,Europe,50
+2027-11,PWR-201,North America,50
+2027-11,HYD-101,Europe,0
+2027-12,BSS-001,North America,50
+2027-12,HYD-102,Europe,50
+2027-12,PWR-201,North America,50
+2027-12,HYD-101,Europe,0
+2028-01,BSS-001,North America,50
+2028-01,HYD-102,Europe,50
+2028-01,PWR-201,North America,50
+2028-01,HYD-101,Europe,0
+2028-02,BSS-001,North America,50
+2028-02,HYD-102,Europe,50
+2028-02,PWR-201,North America,50
+2028-02,HYD-101,Europe,0
+2028-03,BSS-001,North America,50
+2028-03,HYD-102,Europe,50
+2028-03,PWR-201,North America,50
+2028-03,HYD-101,Europe,0
+2028-04,BSS-001,North America,50
+2028-04,HYD-102,Europe,50
+2028-04,PWR-201,North America,50
+2028-04,HYD-101,Europe,0
+2028-05,BSS-001,North America,50
+2028-05,HYD-102,Europe,50
+2028-05,PWR-201,North America,50
+2028-05,HYD-101,Europe,0

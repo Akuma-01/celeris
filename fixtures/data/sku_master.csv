@@ -1,0 +1,5 @@
+SKU_ID,Product_Family,Business_Unit,SKU_Description,Size_Class,Powertrain_Application,Launch_Date,EOL_Date,Replaces_SKU,Lifecycle_Status
+BSS-001,Brake & Safety Systems,Safety & Compliance,Industrial 100 mm Disc Brake Caliper Assembly,Industrial 100,Universal,2018-05,,,Active
+HYD-101,Hydraulic Systems,Fluid Power,Electro-Hydraulic Actuator 40 kN,Hydraulic 40,ICE,2017-01,2024-12,,Discontinued
+HYD-102,Hydraulic Systems,Fluid Power,Electro-Hydraulic Actuator NextGen 40 kN,Hydraulic 40,Universal,2025-01,,HYD-101,Active
+PWR-201,Powertrain Components,Propulsion,Brushless Stator Core Compact 12,Compact 12,EV,2019-01,,,Active

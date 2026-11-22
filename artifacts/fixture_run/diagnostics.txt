@@ -1,0 +1,38 @@
+================================================================================
+CELERIS AUTOMOBILI — INPUT INVENTORY & ROLE RESOLUTION REPORT
+================================================================================
+Directory: /home/akuma/projects/hackathon/celeris/fixtures/data
+Timestamp: 2026-11-22T20:02:51.594879+00:00
+Status   : READY
+--------------------------------------------------------------------------------
+
+1. PHYSICAL FILES INVENTORY:
+Filename                         Size      Rows   Cols Resolved Role         Score
+--------------------------------------------------------------------------------
+events_calendar.csv            0.9 KB        11      7 events_calendar        1.00
+forecast_rows.csv             10.3 KB        76     10 forecast_rows          1.00
+history.csv                   50.9 KB       282     15 history                1.00
+inventory_stockouts.csv        0.2 KB         1     11 stockouts              1.00
+macro_indicators.csv           6.5 KB       113     11 macro_indicators       1.00
+sample_submission.csv          2.2 KB        76      4 sample_submission      1.00
+sku_master.csv                 0.6 KB         4     10 sku_master             1.00
+
+2. SEVEN DATASET ROLES RESOLUTION:
+Dataset Role         Display Name                 Mapped File(s)                
+--------------------------------------------------------------------------------
+history              Historical ERP Sales         history.csv                    [OK]
+forecast_rows        Rows to Forecast (Test Keys) forecast_rows.csv              [OK]
+sku_master           SKU Master                   sku_master.csv                 [OK]
+sample_submission    Sample Submission            sample_submission.csv          [OK]
+macro_indicators     Macro Indicators             macro_indicators.csv           [OK]
+stockouts            Stockout Ledger              inventory_stockouts.csv        [OK]
+events_calendar      Events Calendar              events_calendar.csv            [OK]
+
+4. FORECAST KEYS (TEST SET) INSPECTION:
+  File name           : forecast_rows.csv
+  Total forecast rows : 76
+  Forecast window     : 2026-11 to 2028-05 (19 months, expected 19)
+  Planning scope      : 4 SKUs across 2 regions
+  Target column absent: True (Correct for forecast keys)
+
+================================================================================

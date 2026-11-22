@@ -1,0 +1,65 @@
+{
+  "run_id": "run_20261122_200250_e07412",
+  "run_timestamp": "2026-11-22T20:02:50.243839+00:00",
+  "run_mode": "real",
+  "is_fixture": false,
+  "data_dir": "/home/akuma/projects/hackathon/celeris/student_data",
+  "out_dir": "/home/akuma/projects/hackathon/celeris/artifacts/real_run",
+  "status": "BLOCKED_MISSING_HISTORY",
+  "blocker": "Historical ERP sales extract is MISSING. Expected columns: ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']. Identifying columns required: Record_ID, Units_Sold, Load_Timestamp.",
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "pandas": "3.1.1",
+    "pyarrow": "26.0.1",
+    "streamlit": "1.67.0",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0"
+  },
+  "resolved_roles": {
+    "history": [],
+    "forecast_rows": [
+      "train.csv"
+    ],
+    "sku_master": [
+      "test.csv"
+    ],
+    "sample_submission": [
+      "sku_master.csv"
+    ],
+    "macro_indicators": [
+      "sample_submission.csv"
+    ],
+    "stockouts": [
+      "macro_indicators.csv"
+    ],
+    "events_calendar": [
+      "events_calendar.csv",
+      "inventory_stockouts.csv"
+    ]
+  },
+  "file_hashes": {
+    "events_calendar.csv": "bf45c00afcf946eee0339037348f930d847a55cc3f1cd2c461fdffb9eaf77942",
+    "inventory_stockouts.csv": "bf45c00afcf946eee0339037348f930d847a55cc3f1cd2c461fdffb9eaf77942",
+    "macro_indicators.csv": "eaa92ac8336523b2f28e3c5684b67db2069f1191eefdb3725eb262fbd668cb3c",
+    "sample_submission.csv": "f6fd249574436affbbdf07e56483899e4143307c5eb6f0a5e427c73a71ee0d26",
+    "sku_master.csv": "1d12013567bb1d4373cf610db757f56e908d012326042252f9758effaca9247f",
+    "test.csv": "95664b05e0b7d1a03f346b2ece5e0f2c420c12ec9acb461634ea6254c9816a98",
+    "train.csv": "25dc8d435f44a3fa34706f605c56aa75916a79895cadc33698c00934bd5df18e"
+  },
+  "diagnostics_summary": {
+    "missing_roles": [
+      "history"
+    ],
+    "scanned_file_count": 7,
+    "summary_notes": [
+      "BLOCKER: Historical ERP sales extract is MISSING. Expected columns: ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']. Identifying columns required: Record_ID, Units_Sold, Load_Timestamp.",
+      "Resolved duplicate calendar role: ['events_calendar.csv', 'inventory_stockouts.csv'] are byte-identical. Deduplicating safely.",
+      "Forecast rows resolved in train.csv: 58,219 rows covering 2026-11 to 2028-05 (19 months)."
+    ]
+  },
+  "metadata": {
+    "stage": "milestone_1_skeleton",
+    "execution_halted_reason": "Missing historical ERP sales extract. Halting before training or publishing."
+  }
+}

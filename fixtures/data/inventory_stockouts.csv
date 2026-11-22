@@ -1,0 +1,2 @@
+Date,SKU_ID,Region,Requested_Units,Carried_In_Units,Shipped_Units,Backordered_Units,Lost_Units,Fill_Rate_Pct,Stockout_Days,Reason
+2023-06,BSS-001,North America,100,0,70,20,10,70.0,12,Logistics delay at port

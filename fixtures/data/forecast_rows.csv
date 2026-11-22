@@ -1,0 +1,77 @@
+Date,Year,Month,Product_Family,Business_Unit,SKU_ID,SKU_Description,Customer_Name,Sales_Channel,Region
+2026-11,2026,11,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2026-11,2026,11,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2026-11,2026,11,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2026-11,2026,11,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2026-12,2026,12,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2026-12,2026,12,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2026-12,2026,12,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2026-12,2026,12,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-01,2027,1,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-01,2027,1,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-01,2027,1,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-01,2027,1,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-02,2027,2,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-02,2027,2,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-02,2027,2,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-02,2027,2,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-03,2027,3,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-03,2027,3,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-03,2027,3,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-03,2027,3,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-04,2027,4,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-04,2027,4,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-04,2027,4,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-04,2027,4,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-05,2027,5,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-05,2027,5,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-05,2027,5,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-05,2027,5,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-06,2027,6,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-06,2027,6,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-06,2027,6,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-06,2027,6,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-07,2027,7,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-07,2027,7,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-07,2027,7,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-07,2027,7,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-08,2027,8,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-08,2027,8,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-08,2027,8,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-08,2027,8,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-09,2027,9,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-09,2027,9,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-09,2027,9,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-09,2027,9,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-10,2027,10,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-10,2027,10,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-10,2027,10,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-10,2027,10,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-11,2027,11,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-11,2027,11,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-11,2027,11,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-11,2027,11,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-12,2027,12,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2027-12,2027,12,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2027-12,2027,12,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2027-12,2027,12,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-01,2028,1,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2028-01,2028,1,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-01,2028,1,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2028-01,2028,1,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-02,2028,2,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2028-02,2028,2,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-02,2028,2,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2028-02,2028,2,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-03,2028,3,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2028-03,2028,3,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-03,2028,3,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2028-03,2028,3,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-04,2028,4,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2028-04,2028,4,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-04,2028,4,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2028-04,2028,4,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-05,2028,5,Brake & Safety Systems,Safety & Compliance,BSS-001,Industrial 100 mm Disc Brake Caliper Assembly,Solaris Automotive,Direct OEM,North America
+2028-05,2028,5,Hydraulic Systems,Fluid Power,HYD-102,Electro-Hydraulic Actuator NextGen 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe
+2028-05,2028,5,Powertrain Components,Propulsion,PWR-201,Brushless Stator Core Compact 12,Veloce Motors,Direct OEM,North America
+2028-05,2028,5,Hydraulic Systems,Fluid Power,HYD-101,Electro-Hydraulic Actuator 40 kN,Apex Motion GmbH,Tier-1 Distributor,Europe

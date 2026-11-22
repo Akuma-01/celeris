@@ -1,0 +1,12 @@
+Event_ID,Start_Date,End_Date,Scope_Type,Scope_Value,Event_Type,Description
+EV-001,2019-01,2019-01,Global,All,Price Change,Annual list-price increase 2%
+EV-002,2020-01,2020-01,Global,All,Price Change,Annual list-price increase 2.5%
+EV-003,2021-01,2021-01,Global,All,Price Change,Annual list-price increase 3%
+EV-004,2022-01,2022-01,Global,All,Price Change,Annual list-price increase 4%
+EV-005,2023-01,2023-01,Global,All,Price Change,Annual list-price increase 3%
+EV-006,2023-06,2023-06,Region,North America,Supply Constraint,Logistics delay at port affecting brake shipments
+EV-007,2024-01,2024-01,Global,All,Price Change,Annual list-price increase 2.5%
+EV-008,2025-01,2025-01,Global,All,Price Change,Annual list-price increase 2.0%
+EV-009,2026-01,2026-01,Global,All,Price Change,Annual list-price increase 2.0%
+EV-010,2027-01,2027-01,Global,All,Price Change,Annual list-price increase 2.0%
+EV-011,2028-01,2028-01,Global,All,Price Change,Annual list-price increase 2.0%

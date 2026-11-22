@@ -1,0 +1,233 @@
+{
+  "directory": "/home/akuma/projects/hackathon/celeris/fixtures/data",
+  "timestamp": "2026-11-22T20:02:51.594879+00:00",
+  "is_ready": true,
+  "blocker_message": null,
+  "files_scanned": [
+    {
+      "file_name": "events_calendar.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/events_calendar.csv",
+      "file_size_bytes": 969,
+      "row_count": 11,
+      "column_count": 7,
+      "columns": [
+        "Event_ID",
+        "Start_Date",
+        "End_Date",
+        "Scope_Type",
+        "Scope_Value",
+        "Event_Type",
+        "Description"
+      ],
+      "sha256_hash": "7711930daa3c8db2f0603dd796f485b6c67b70843f46c31c5e5fea76abb58689",
+      "matched_role": "events_calendar",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 5 distinguishing columns: ['Description', 'Event_ID', 'Event_Type', 'Scope_Type', 'Scope_Value']",
+        "Total column overlap: 7/7"
+      ]
+    },
+    {
+      "file_name": "forecast_rows.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/forecast_rows.csv",
+      "file_size_bytes": 10573,
+      "row_count": 76,
+      "column_count": 10,
+      "columns": [
+        "Date",
+        "Year",
+        "Month",
+        "Product_Family",
+        "Business_Unit",
+        "SKU_ID",
+        "SKU_Description",
+        "Customer_Name",
+        "Sales_Channel",
+        "Region"
+      ],
+      "sha256_hash": "7c510e72cc48aa269ab8714dc5ee3f22a30c74a239363b7eb63cfff0526f2f59",
+      "matched_role": "forecast_rows",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 4 distinguishing columns: ['Business_Unit', 'Customer_Name', 'Product_Family', 'Sales_Channel']",
+        "Total column overlap: 10/10"
+      ]
+    },
+    {
+      "file_name": "history.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/history.csv",
+      "file_size_bytes": 52104,
+      "row_count": 282,
+      "column_count": 15,
+      "columns": [
+        "Record_ID",
+        "Date",
+        "Year",
+        "Month",
+        "Product_Family",
+        "Business_Unit",
+        "SKU_ID",
+        "SKU_Description",
+        "Customer_Name",
+        "Sales_Channel",
+        "Region",
+        "Units_Sold",
+        "Unit_Price_USD",
+        "Revenue_USD",
+        "Load_Timestamp"
+      ],
+      "sha256_hash": "578a09fe17b4fdd02f75612d173d247fa559ff087c8a920f1543c6bc4b25dab7",
+      "matched_role": "history",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 5 distinguishing columns: ['Load_Timestamp', 'Record_ID', 'Revenue_USD', 'Unit_Price_USD', 'Units_Sold']",
+        "Total column overlap: 15/15"
+      ]
+    },
+    {
+      "file_name": "inventory_stockouts.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/inventory_stockouts.csv",
+      "file_size_bytes": 207,
+      "row_count": 1,
+      "column_count": 11,
+      "columns": [
+        "Date",
+        "SKU_ID",
+        "Region",
+        "Requested_Units",
+        "Carried_In_Units",
+        "Shipped_Units",
+        "Backordered_Units",
+        "Lost_Units",
+        "Fill_Rate_Pct",
+        "Stockout_Days",
+        "Reason"
+      ],
+      "sha256_hash": "a9ff1744d2e92a779d655bd5e411bbbfaeaac3b39fea1ea0a5636f28a80283da",
+      "matched_role": "stockouts",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 8 distinguishing columns: ['Backordered_Units', 'Carried_In_Units', 'Fill_Rate_Pct', 'Lost_Units', 'Reason', 'Requested_Units', 'Shipped_Units', 'Stockout_Days']",
+        "Total column overlap: 11/11"
+      ]
+    },
+    {
+      "file_name": "macro_indicators.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/macro_indicators.csv",
+      "file_size_bytes": 6620,
+      "row_count": 113,
+      "column_count": 11,
+      "columns": [
+        "Date",
+        "Year",
+        "Month",
+        "ISM_Manufacturing_PMI",
+        "Auto_Production_YoY_Pct",
+        "Vehicle_Inventory_Days",
+        "Raw_Material_Cost_Index",
+        "New_Vehicle_Orders_Index",
+        "Industrial_Util_Rate_Pct",
+        "Fuel_Price_Index",
+        "EV_Adoption_Index"
+      ],
+      "sha256_hash": "9c58f8def0a5caa660490eac4a21fd9c4af47095374685d477dff13a5ba05479",
+      "matched_role": "macro_indicators",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 8 distinguishing columns: ['Auto_Production_YoY_Pct', 'EV_Adoption_Index', 'Fuel_Price_Index', 'ISM_Manufacturing_PMI', 'Industrial_Util_Rate_Pct', 'New_Vehicle_Orders_Index', 'Raw_Material_Cost_Index', 'Vehicle_Inventory_Days']",
+        "Total column overlap: 11/11"
+      ]
+    },
+    {
+      "file_name": "sample_submission.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/sample_submission.csv",
+      "file_size_bytes": 2262,
+      "row_count": 76,
+      "column_count": 4,
+      "columns": [
+        "Date",
+        "SKU_ID",
+        "Region",
+        "Units_Sold_Forecast"
+      ],
+      "sha256_hash": "5c27248c72731e5a254c46d64903284c73d08766c5297ef1b54b2cd71817e80a",
+      "matched_role": "sample_submission",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 1 distinguishing columns: ['Units_Sold_Forecast']",
+        "Total column overlap: 4/4"
+      ]
+    },
+    {
+      "file_name": "sku_master.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/fixtures/data/sku_master.csv",
+      "file_size_bytes": 625,
+      "row_count": 4,
+      "column_count": 10,
+      "columns": [
+        "SKU_ID",
+        "Product_Family",
+        "Business_Unit",
+        "SKU_Description",
+        "Size_Class",
+        "Powertrain_Application",
+        "Launch_Date",
+        "EOL_Date",
+        "Replaces_SKU",
+        "Lifecycle_Status"
+      ],
+      "sha256_hash": "c831f66c1efb3cf8eb3e5b2d9583a80f330b3773345823afcf901bf6a3c75878",
+      "matched_role": "sku_master",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 6 distinguishing columns: ['EOL_Date', 'Launch_Date', 'Lifecycle_Status', 'Powertrain_Application', 'Replaces_SKU', 'Size_Class']",
+        "Total column overlap: 10/10"
+      ]
+    }
+  ],
+  "role_mapping": {
+    "history": [
+      "history.csv"
+    ],
+    "forecast_rows": [
+      "forecast_rows.csv"
+    ],
+    "sku_master": [
+      "sku_master.csv"
+    ],
+    "sample_submission": [
+      "sample_submission.csv"
+    ],
+    "macro_indicators": [
+      "macro_indicators.csv"
+    ],
+    "stockouts": [
+      "inventory_stockouts.csv"
+    ],
+    "events_calendar": [
+      "events_calendar.csv"
+    ]
+  },
+  "missing_roles": [],
+  "calendar_comparison": null,
+  "forecast_keys_profile": {
+    "file_name": "forecast_rows.csv",
+    "total_rows": 76,
+    "min_date": "2026-11",
+    "max_date": "2028-05",
+    "num_months": 19,
+    "expected_months": 19,
+    "unique_skus": 4,
+    "unique_regions": 2,
+    "has_target_column": false,
+    "is_valid_test_set": true,
+    "notes": [
+      "19 forecast months confirmed (2026-11 through 2028-05).",
+      "Planning keys span 4 SKUs across 2 regions."
+    ]
+  },
+  "summary_notes": [
+    "Forecast rows resolved in forecast_rows.csv: 76 rows covering 2026-11 to 2028-05 (19 months).",
+    "All seven dataset roles successfully resolved."
+  ]
+}
