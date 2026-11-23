@@ -1,6 +1,11 @@
 {
-  "current_run_id": "run_20261122_200251_5ebdda",
+  "current_run_id": "run_20261122_202436_785fc9",
   "run_mode": "fixture",
-  "timestamp": "2026-11-22T20:02:51.597656+00:00",
-  "manifest": "artifacts/fixture_run/manifest.json"
+  "timestamp": "2026-11-22T20:24:36.080186+00:00",
+  "manifest": "artifacts/fixture_run/manifest.json",
+  "published_artifacts": {
+    "history": "artifacts/fixture_run/history.parquet",
+    "quality": "artifacts/fixture_run/quality.parquet",
+    "anomalies": "artifacts/fixture_run/anomalies.parquet"
+  }
 }

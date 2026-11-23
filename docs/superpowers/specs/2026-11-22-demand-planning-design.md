@@ -8,7 +8,9 @@ The planning scope is approximately 600 SKUs across seven product families and s
 
 ## Input inventory
 
-The six CSV headers currently visible in `student_data/` identify the following roles. The inventory establishes file identity only. Row counts, actual date coverage and SKU counts are checks for the implementation run.
+**Implementation handoff.** Start with Core. Use the linked problem statement for the full column definitions and business rules. Implement the batch command and its output tables first, then connect all five dashboard views to those outputs. With the historical extract missing, run the same code end to end on a small, explicitly selected fixture covering the backtest dates, with a few SKUs and known outcomes. Label fixture runs in the manifest and dashboard and write them to a separate output directory. A real-data run with a missing role should identify the role and expected columns and exit before training or publishing. Once all inputs are available, run the real-data acceptance checks below. Document the local environment setup, input directory, batch, dashboard and test commands in the project README.
+
+The seven CSV files in `student_data/` cover six of the seven expected dataset roles. Two headers match the events calendar. The historical ERP sales extract is still missing. This inventory is based on headers alone. Row counts, date coverage and SKU counts are checks for the implementation run.
 
 | Dataset role | File in this checkout | Identifying columns |
 |---|---|---|
@@ -18,7 +20,7 @@ The six CSV headers currently visible in `student_data/` identify the following 
 | Submission example | `sku_master.csv` | `Units_Sold_Forecast` |
 | Macro indicators | `sample_submission.csv` | `ISM_Manufacturing_PMI`, `EV_Adoption_Index` |
 | Stockout ledger | `macro_indicators.csv` | `Requested_Units`, `Carried_In_Units`, `Shipped_Units` |
-| Events calendar | `inventory_stockouts.csv` | `Event_ID`, `Scope_Type`, `Event_Type` |
+| Events calendar | `events_calendar.csv` and `inventory_stockouts.csv` | Both contain `Event_ID`, `Scope_Type` and `Event_Type`. Row equivalence is unverified. |
 
 At startup, match headers against the seven schemas in the brief, using the full column set to distinguish history from forecast inputs. Record each physical path and resolved role in the run manifest. Report missing or ambiguous roles before fitting. This mapping also handles a later delivery under the expected filenames. Training and backtests depend on the historical ERP extract. The stockout ledger samples constrained months and cannot represent ordinary orders, zero months or portfolio demand.
 
@@ -31,7 +33,21 @@ At startup, match headers against the seven schemas in the brief, using the full
 
 Use pandas for tabular processing, Parquet for typed local artifacts, and a pooled gradient-boosted tree model for the main challenger. A laptop runs the batch jobs. Streamlit reads their outputs and filters them locally. A live ERP connection, online model serving and automated purchase orders are outside the one-week scope.
 
-## Data flow and contracts
+## Implementation architecture
+
+Run two local processes. The Python batch command owns data preparation, model fitting, validation and publication. The Streamlit app opens one published run and applies planner filters to its tables. Changing a dashboard filter reads and aggregates saved results without triggering a training job.
+
+| Proposed location | Responsibility |
+|---|---|
+| `celeris/__main__.py` and `celeris/pipeline.py` | Parse the run arguments and coordinate ingestion, historical backtests, final fitting and publication. Pass each forecast origin explicitly to the stages that depend on time. |
+| `celeris/ingest.py` and `celeris/clean.py` | Resolve CSV roles, validate keys, normalize fields and return cleaned tables plus the data-quality log. |
+| `celeris/demand.py` and `celeris/features.py` | Reconcile shipments and stockouts, produce the anomaly register, and build model inputs using data available at each origin. |
+| `celeris/forecast.py` and `celeris/backtest.py` | Implement the candidate models and fallbacks. Use the same feature and prediction functions for historical folds and for the final 19-month forecast. Store predictions and scoring targets by fold. |
+| `celeris/publish.py` | Validate output tables, derive the submission from the final forecast table, and publish the tables and manifest as one run. |
+| `app.py` | Load the published run, maintain shared filter selections and render the five Core views. Compute filtered totals and accuracy from the saved rows. |
+| `tests/` | Exercise cleaning rules, forecast cutoffs and submission contracts. Run the batch command on the labeled fixture and check that the dashboard can load its outputs. |
+
+### Data flow and contracts
 
 ```mermaid
 flowchart LR
@@ -83,6 +99,8 @@ Run deterministic checks first. On valid observations, compare demand with a sea
 
 Core features cover delivery month, seasonality, lags at 1, 3, 6 and 12 months, trailing mean and variability, time since last order, observed zero share, inter-order interval and variability of positive order sizes. Calculate them as of each origin. Train successive examples with their own as-of state. Carry missingness flags through to the model.
 
+For the Core intermittency class, compute average demand interval as eligible observed months divided by positive-demand months. Compute squared coefficient of variation as the population variance of positive order sizes divided by their squared mean. As an initial rule, split these measures at 1.32 and 0.49 respectively. Label the four combinations smooth (both low), intermittent (high interval only), erratic (high variability only) and lumpy (both high). Treat values at the thresholds as high. Mark series with fewer than two positive months as insufficient history. Store the class and observation counts per origin and expose them in the demand explorer.
+
 Advanced features include series age, distance to launch/EOL, scoped event overlaps, customer changes and lagged macro indicators. Match global, region, family, channel and customer events to their stated scope, including customer–region pairs. Clip open-ended events at the prediction month. Separate demand events from system incidents and supply-only constraints. In development folds, compare indicator lags 0–12 against family demand after removing trend and seasonality. Retain drivers that improve held-out forecasts. Compare early and late windows and examine EV adoption separately for ICE, EV and universal applications. Label these as associations.
 
 ## Forecasting and validation
@@ -124,7 +142,7 @@ The first two optional views are **stockouts and lost sales** (requested, shippe
 
 ## One-week delivery and acceptance
 
-Start with schema resolution, forecast-key validation and reference-data checks on the six available inputs. While the ERP extract is outstanding, use a labeled fixture to exercise deduplication, stockout carry and missing months. Once history arrives, run the full pipeline and acceptance checks on the supplied data. Core is the one-week acceptance target. Additional tiers depend on the available team and time.
+Start with schema resolution and forecast-key validation. During reference-data checks, compare the two calendar inputs by event ID and fields. Count identical events once and flag conflicts for review. While the ERP extract is outstanding, use a labeled fixture to exercise deduplication, stockout carry and missing months. Once history arrives, run the full pipeline and acceptance checks on the supplied data. Core is the one-week acceptance target. Additional tiers depend on the available team and time.
 
 | Day | Work and exit check |
 |---|---|

@@ -1,0 +1,75 @@
+{
+  "run_id": "run_20261122_202436_785fc9",
+  "run_timestamp": "2026-11-22T20:24:36.080186+00:00",
+  "run_mode": "fixture",
+  "is_fixture": true,
+  "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
+  "out_dir": "/home/akuma/projects/hackathon/celeris/artifacts/fixture_run",
+  "status": "SUCCESS",
+  "blocker": null,
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "pandas": "3.1.1",
+    "pyarrow": "26.0.1",
+    "streamlit": "1.67.0",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0"
+  },
+  "resolved_roles": {
+    "history": [
+      "history.csv"
+    ],
+    "forecast_rows": [
+      "forecast_rows.csv"
+    ],
+    "sku_master": [
+      "sku_master.csv"
+    ],
+    "sample_submission": [
+      "sample_submission.csv"
+    ],
+    "macro_indicators": [
+      "macro_indicators.csv"
+    ],
+    "stockouts": [
+      "inventory_stockouts.csv"
+    ],
+    "events_calendar": [
+      "events_calendar.csv"
+    ]
+  },
+  "file_hashes": {
+    "events_calendar.csv": "7711930daa3c8db2f0603dd796f485b6c67b70843f46c31c5e5fea76abb58689",
+    "forecast_rows.csv": "7c510e72cc48aa269ab8714dc5ee3f22a30c74a239363b7eb63cfff0526f2f59",
+    "history.csv": "578a09fe17b4fdd02f75612d173d247fa559ff087c8a920f1543c6bc4b25dab7",
+    "inventory_stockouts.csv": "a9ff1744d2e92a779d655bd5e411bbbfaeaac3b39fea1ea0a5636f28a80283da",
+    "macro_indicators.csv": "9c58f8def0a5caa660490eac4a21fd9c4af47095374685d477dff13a5ba05479",
+    "sample_submission.csv": "5c27248c72731e5a254c46d64903284c73d08766c5297ef1b54b2cd71817e80a",
+    "sku_master.csv": "c831f66c1efb3cf8eb3e5b2d9583a80f330b3773345823afcf901bf6a3c75878"
+  },
+  "diagnostics_summary": {
+    "missing_roles": [],
+    "scanned_file_count": 7,
+    "summary_notes": [
+      "Forecast rows resolved in forecast_rows.csv: 76 rows covering 2026-11 to 2028-05 (19 months).",
+      "All seven dataset roles successfully resolved."
+    ],
+    "raw_history_rows": 282,
+    "cleaned_history_rows": 281,
+    "panel_history_rows": 376,
+    "observed_rows": 281,
+    "unobserved_missing_rows": 95,
+    "quality_issues_logged": 1,
+    "anomalies_logged": 134,
+    "total_reconstructed_demand": 21052.0
+  },
+  "metadata": {
+    "stage": "milestone_2_cleaning_and_demand",
+    "published_artifacts": {
+      "history": "artifacts/fixture_run/history.parquet",
+      "quality": "artifacts/fixture_run/quality.parquet",
+      "anomalies": "artifacts/fixture_run/anomalies.parquet"
+    }
+  }
+}

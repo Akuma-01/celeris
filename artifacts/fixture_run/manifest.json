@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261122_200251_5ebdda",
-  "run_timestamp": "2026-11-22T20:02:51.597656+00:00",
+  "run_id": "run_20261122_202436_785fc9",
+  "run_timestamp": "2026-11-22T20:24:36.080186+00:00",
   "run_mode": "fixture",
   "is_fixture": true,
   "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
@@ -55,10 +55,21 @@
       "Forecast rows resolved in forecast_rows.csv: 76 rows covering 2026-11 to 2028-05 (19 months).",
       "All seven dataset roles successfully resolved."
     ],
-    "test_rows": 76
+    "raw_history_rows": 282,
+    "cleaned_history_rows": 281,
+    "panel_history_rows": 376,
+    "observed_rows": 281,
+    "unobserved_missing_rows": 95,
+    "quality_issues_logged": 1,
+    "anomalies_logged": 134,
+    "total_reconstructed_demand": 21052.0
   },
   "metadata": {
-    "stage": "milestone_1_skeleton",
-    "notes": "Input contracts verified; skeleton pipeline ready for cleaning stages."
+    "stage": "milestone_2_cleaning_and_demand",
+    "published_artifacts": {
+      "history": "artifacts/fixture_run/history.parquet",
+      "quality": "artifacts/fixture_run/quality.parquet",
+      "anomalies": "artifacts/fixture_run/anomalies.parquet"
+    }
   }
 }

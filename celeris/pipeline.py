@@ -8,14 +8,19 @@ import shutil
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
+import pandas as pd
+
+from celeris.clean import clean_history_transactions, QualityRecord
+from celeris.demand import reconstruct_demand_and_anomalies, AnomalyRecord
 from celeris.ingest import (
     DiagnosticReport,
     diagnose_input_directory,
     format_diagnostic_report,
 )
 from celeris.manifest import RunManifest
+from celeris.schemas import DatasetRole
 
 
 @dataclass
@@ -30,10 +35,11 @@ class PipelineRunResult:
     manifest_path: Optional[str]
     message: str
     report: DiagnosticReport
+    published_artifacts: Dict[str, str]
 
 
 class PipelineRunner:
-    """Coordinates ingestion, role resolution, diagnostics, and staged runs."""
+    """Coordinates ingestion, role resolution, diagnostics, cleaning, and publication."""
 
     def __init__(
         self,
@@ -46,7 +52,6 @@ class PipelineRunner:
         self.out_dir = Path(out_dir)
         self.run_id = run_id or f"run_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
 
-        # Auto-detect fixture if not explicitly specified
         if is_fixture is None:
             self.is_fixture = "fixture" in str(self.data_dir).lower()
         else:
@@ -67,14 +72,12 @@ class PipelineRunner:
         return report
 
     def run(self) -> PipelineRunResult:
-        """Execute pipeline with contract enforcement and staging."""
+        """Execute pipeline with contract enforcement, cleaning, and staging."""
         self.out_dir.mkdir(parents=True, exist_ok=True)
         report = self.diagnose(save_report=True)
 
         run_mode = "fixture" if self.is_fixture else "real"
         timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-        # Input hashes
         file_hashes = {p.file_name: p.sha256_hash for p in report.files_scanned}
 
         # Check for missing history
@@ -96,7 +99,7 @@ class PipelineRunner:
                     "summary_notes": report.summary_notes,
                 },
                 metadata={
-                    "stage": "milestone_1_skeleton",
+                    "stage": "milestone_2_cleaning_and_demand",
                     "execution_halted_reason": "Missing historical ERP sales extract. Halting before training or publishing.",
                 },
             )
@@ -118,12 +121,84 @@ class PipelineRunner:
                 manifest_path=str(manifest_path),
                 message=msg,
                 report=report,
+                published_artifacts={},
             )
 
-        # Ingestion succeeded and all roles resolved!
+        # Ingestion succeeded: load resolved dataframes
         staging_dir = self.out_dir / "staging" / self.run_id
         staging_dir.mkdir(parents=True, exist_ok=True)
 
+        history_files = report.role_mapping.get(DatasetRole.HISTORY.value, [])
+        sku_master_files = report.role_mapping.get(DatasetRole.SKU_MASTER.value, [])
+        stockouts_files = report.role_mapping.get(DatasetRole.STOCKOUTS.value, [])
+        events_files = report.role_mapping.get(DatasetRole.EVENTS_CALENDAR.value, [])
+
+        history_path = self.data_dir / history_files[0]
+        sku_master_path = self.data_dir / sku_master_files[0]
+        stockouts_path = self.data_dir / stockouts_files[0] if stockouts_files else None
+        events_path = self.data_dir / events_files[0] if events_files else None
+
+        raw_history_df = pd.read_csv(history_path)
+        sku_master_df = pd.read_csv(sku_master_path) if sku_master_path.exists() else pd.DataFrame()
+        stockouts_df = pd.read_csv(stockouts_path) if stockouts_path and stockouts_path.exists() else None
+        events_df = pd.read_csv(events_path) if events_path and events_path.exists() else None
+
+        # Step 1: Clean transactions and latest-load deduplication
+        cleaned_history_df, quality_records = clean_history_transactions(
+            history_df=raw_history_df,
+            sku_master_df=sku_master_df,
+            file_name=history_path.name,
+        )
+
+        # Step 2: Demand reconstruction, missing vs zero, backlog carry, anomalies
+        history_panel_df, anomaly_records = reconstruct_demand_and_anomalies(
+            cleaned_history=cleaned_history_df,
+            sku_master_df=sku_master_df,
+            stockouts_df=stockouts_df,
+            events_df=events_df,
+        )
+
+        # Step 3: Materialize dataframes
+        quality_df = pd.DataFrame([q.to_dict() for q in quality_records])
+        if quality_df.empty:
+            quality_df = pd.DataFrame(columns=[
+                "file_name", "source_row_id", "planning_key", "field", "rule",
+                "original_value", "cleaned_value", "decision", "reason", "linked_evidence"
+            ])
+
+        anomalies_df = pd.DataFrame([a.to_dict() for a in anomaly_records])
+        if anomalies_df.empty:
+            anomalies_df = pd.DataFrame(columns=[
+                "anomaly_id", "planning_key", "Date", "SKU_ID", "Region",
+                "anomaly_type", "description", "original_value", "cleaned_value",
+                "confidence", "action", "reason", "linked_evidence"
+            ])
+
+        # Step 4: Save published Parquet tables
+        history_parquet = staging_dir / "history.parquet"
+        quality_parquet = staging_dir / "quality.parquet"
+        anomalies_parquet = staging_dir / "anomalies.parquet"
+
+        history_panel_df.to_parquet(history_parquet, index=False)
+        quality_df.to_parquet(quality_parquet, index=False)
+        anomalies_df.to_parquet(anomalies_parquet, index=False)
+
+        # Copy to out_dir
+        final_history = self.out_dir / "history.parquet"
+        final_quality = self.out_dir / "quality.parquet"
+        final_anomalies = self.out_dir / "anomalies.parquet"
+
+        shutil.copy2(history_parquet, final_history)
+        shutil.copy2(quality_parquet, final_quality)
+        shutil.copy2(anomalies_parquet, final_anomalies)
+
+        published_artifacts = {
+            "history": str(final_history),
+            "quality": str(final_quality),
+            "anomalies": str(final_anomalies),
+        }
+
+        # Manifest
         manifest = RunManifest(
             run_id=self.run_id,
             run_timestamp=timestamp,
@@ -139,21 +214,26 @@ class PipelineRunner:
                 "missing_roles": [],
                 "scanned_file_count": len(report.files_scanned),
                 "summary_notes": report.summary_notes,
-                "test_rows": report.forecast_keys_profile.total_rows if report.forecast_keys_profile else 0,
+                "raw_history_rows": len(raw_history_df),
+                "cleaned_history_rows": len(cleaned_history_df),
+                "panel_history_rows": len(history_panel_df),
+                "observed_rows": int(history_panel_df["is_observed"].sum()),
+                "unobserved_missing_rows": int((~history_panel_df["is_observed"]).sum()),
+                "quality_issues_logged": len(quality_records),
+                "anomalies_logged": len(anomaly_records),
+                "total_reconstructed_demand": float(history_panel_df["reconstructed_demand"].sum(skipna=True)),
             },
             metadata={
-                "stage": "milestone_1_skeleton",
-                "notes": "Input contracts verified; skeleton pipeline ready for cleaning stages.",
+                "stage": "milestone_2_cleaning_and_demand",
+                "published_artifacts": published_artifacts,
             },
         )
         staging_manifest = staging_dir / "manifest.json"
         manifest.save(staging_manifest)
 
-        # Switch current pointer / copy to out_dir
         manifest_path = self.out_dir / "manifest.json"
         manifest.save(manifest_path)
 
-        # Save pointer
         current_pointer = self.out_dir / "current_run.json"
         with open(current_pointer, "w", encoding="utf-8") as f:
             json.dump({
@@ -161,11 +241,16 @@ class PipelineRunner:
                 "run_mode": run_mode,
                 "timestamp": timestamp,
                 "manifest": str(manifest_path),
+                "published_artifacts": published_artifacts,
             }, f, indent=2)
 
         msg = (
             f"Run {self.run_id} SUCCESS ({run_mode.upper()} MODE):\n"
-            f"All seven dataset roles resolved successfully.\n"
+            f"Cleaned {len(raw_history_df)} raw records -> {len(cleaned_history_df)} deduplicated records.\n"
+            f"Published monthly panel: {len(history_panel_df)} rows ({int(history_panel_df['is_observed'].sum())} observed, {int((~history_panel_df['is_observed']).sum())} missing gaps).\n"
+            f"Quality records: {len(quality_records)} logged to quality.parquet\n"
+            f"Anomalies registered: {len(anomaly_records)} logged to anomalies.parquet\n"
+            f"Cleaned history: {final_history}\n"
             f"Manifest saved to {manifest_path}"
         )
         return PipelineRunResult(
@@ -178,4 +263,5 @@ class PipelineRunner:
             manifest_path=str(manifest_path),
             message=msg,
             report=report,
+            published_artifacts=published_artifacts,
         )
