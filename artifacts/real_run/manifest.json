@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261122_200250_e07412",
-  "run_timestamp": "2026-11-22T20:02:50.243839+00:00",
+  "run_id": "run_20261123_163852_d80cd6",
+  "run_timestamp": "2026-11-23T16:38:53.030397+00:00",
   "run_mode": "real",
   "is_fixture": false,
   "data_dir": "/home/akuma/projects/hackathon/celeris/student_data",
@@ -59,7 +59,7 @@
     ]
   },
   "metadata": {
-    "stage": "milestone_1_skeleton",
+    "stage": "milestone_4_forecast_and_submission",
     "execution_halted_reason": "Missing historical ERP sales extract. Halting before training or publishing."
   }
 }

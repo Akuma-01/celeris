@@ -1,7 +1,7 @@
 {
-  "current_run_id": "run_20261123_075520_f3bfe3",
+  "current_run_id": "run_20261123_163855_1b35a5",
   "run_mode": "fixture",
-  "timestamp": "2026-11-23T07:55:20.437960+00:00",
+  "timestamp": "2026-11-23T16:38:55.936693+00:00",
   "manifest": "artifacts/fixture_run/manifest.json",
   "published_artifacts": {
     "history": "artifacts/fixture_run/history.parquet",
