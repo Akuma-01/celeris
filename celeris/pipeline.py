@@ -14,6 +14,7 @@ import pandas as pd
 
 from celeris.clean import clean_history_transactions, QualityRecord
 from celeris.demand import reconstruct_demand_and_anomalies, AnomalyRecord
+from celeris.backtest import run_full_backtest, verify_leakage_safety, DEFAULT_FOLDS
 from celeris.ingest import (
     DiagnosticReport,
     diagnose_input_directory,
@@ -36,10 +37,11 @@ class PipelineRunResult:
     message: str
     report: DiagnosticReport
     published_artifacts: Dict[str, str]
+    backtest_summary: Optional[Dict[str, Any]] = None
 
 
 class PipelineRunner:
-    """Coordinates ingestion, role resolution, diagnostics, cleaning, and publication."""
+    """Coordinates ingestion, role resolution, diagnostics, cleaning, backtesting, and publication."""
 
     def __init__(
         self,
@@ -72,7 +74,7 @@ class PipelineRunner:
         return report
 
     def run(self) -> PipelineRunResult:
-        """Execute pipeline with contract enforcement, cleaning, and staging."""
+        """Execute pipeline with contract enforcement, cleaning, backtesting, and staging."""
         self.out_dir.mkdir(parents=True, exist_ok=True)
         report = self.diagnose(save_report=True)
 
@@ -99,7 +101,7 @@ class PipelineRunner:
                     "summary_notes": report.summary_notes,
                 },
                 metadata={
-                    "stage": "milestone_2_cleaning_and_demand",
+                    "stage": "milestone_3_features_and_models",
                     "execution_halted_reason": "Missing historical ERP sales extract. Halting before training or publishing.",
                 },
             )
@@ -158,7 +160,13 @@ class PipelineRunner:
             events_df=events_df,
         )
 
-        # Step 3: Materialize dataframes
+        # Step 3: Run 19-month Backtest protocol across 3 folds and verify leakage safety
+        backtest_df, backtest_summary = run_full_backtest(history_panel_df, DEFAULT_FOLDS)
+
+        # Leakage verification on Fold 1
+        leakage_passed = verify_leakage_safety(history_panel_df, DEFAULT_FOLDS[0])
+
+        # Step 4: Materialize dataframes
         quality_df = pd.DataFrame([q.to_dict() for q in quality_records])
         if quality_df.empty:
             quality_df = pd.DataFrame(columns=[
@@ -174,28 +182,33 @@ class PipelineRunner:
                 "confidence", "action", "reason", "linked_evidence"
             ])
 
-        # Step 4: Save published Parquet tables
+        # Step 5: Save published Parquet tables
         history_parquet = staging_dir / "history.parquet"
         quality_parquet = staging_dir / "quality.parquet"
         anomalies_parquet = staging_dir / "anomalies.parquet"
+        backtest_parquet = staging_dir / "backtest.parquet"
 
         history_panel_df.to_parquet(history_parquet, index=False)
         quality_df.to_parquet(quality_parquet, index=False)
         anomalies_df.to_parquet(anomalies_parquet, index=False)
+        backtest_df.to_parquet(backtest_parquet, index=False)
 
         # Copy to out_dir
         final_history = self.out_dir / "history.parquet"
         final_quality = self.out_dir / "quality.parquet"
         final_anomalies = self.out_dir / "anomalies.parquet"
+        final_backtest = self.out_dir / "backtest.parquet"
 
         shutil.copy2(history_parquet, final_history)
         shutil.copy2(quality_parquet, final_quality)
         shutil.copy2(anomalies_parquet, final_anomalies)
+        shutil.copy2(backtest_parquet, final_backtest)
 
         published_artifacts = {
             "history": str(final_history),
             "quality": str(final_quality),
             "anomalies": str(final_anomalies),
+            "backtest": str(final_backtest),
         }
 
         # Manifest
@@ -222,10 +235,16 @@ class PipelineRunner:
                 "quality_issues_logged": len(quality_records),
                 "anomalies_logged": len(anomaly_records),
                 "total_reconstructed_demand": float(history_panel_df["reconstructed_demand"].sum(skipna=True)),
+                "backtest_rows": len(backtest_df),
+                "leakage_check_passed": leakage_passed,
+                "selected_winning_model": backtest_summary["selected_winner"],
+                "development_metrics": backtest_summary["development_metrics"],
+                "frozen_holdout_metrics": backtest_summary["frozen_holdout_metrics"],
             },
             metadata={
-                "stage": "milestone_2_cleaning_and_demand",
+                "stage": "milestone_3_features_and_models",
                 "published_artifacts": published_artifacts,
+                "backtest_summary": backtest_summary,
             },
         )
         staging_manifest = staging_dir / "manifest.json"
@@ -244,13 +263,19 @@ class PipelineRunner:
                 "published_artifacts": published_artifacts,
             }, f, indent=2)
 
+        winner = backtest_summary["selected_winner"]
+        dev_wape = backtest_summary["development_metrics"][winner]["wape"]
+        dev_bias = backtest_summary["development_metrics"][winner]["signed_bias"]
+        holdout_wape = backtest_summary["frozen_holdout_metrics"][winner]["wape"]
+        holdout_bias = backtest_summary["frozen_holdout_metrics"][winner]["signed_bias"]
+
         msg = (
             f"Run {self.run_id} SUCCESS ({run_mode.upper()} MODE):\n"
-            f"Cleaned {len(raw_history_df)} raw records -> {len(cleaned_history_df)} deduplicated records.\n"
-            f"Published monthly panel: {len(history_panel_df)} rows ({int(history_panel_df['is_observed'].sum())} observed, {int((~history_panel_df['is_observed']).sum())} missing gaps).\n"
-            f"Quality records: {len(quality_records)} logged to quality.parquet\n"
-            f"Anomalies registered: {len(anomaly_records)} logged to anomalies.parquet\n"
-            f"Cleaned history: {final_history}\n"
+            f"19-Month Backtest: 3 Folds evaluated ({len(backtest_df)} backtest prediction rows).\n"
+            f"Leakage Check: {'PASSED' if leakage_passed else 'FAILED'}.\n"
+            f"Selected Winning Model (Dev Folds): {winner.upper()} (Dev WAPE: {dev_wape:.2%}, Signed Bias: {dev_bias:+.2%})\n"
+            f"Frozen Holdout Evaluation (Fold 3): WAPE: {holdout_wape:.2%}, Signed Bias: {holdout_bias:+.2%}\n"
+            f"Published: history.parquet, quality.parquet, anomalies.parquet, backtest.parquet\n"
             f"Manifest saved to {manifest_path}"
         )
         return PipelineRunResult(
@@ -264,4 +289,5 @@ class PipelineRunner:
             message=msg,
             report=report,
             published_artifacts=published_artifacts,
+            backtest_summary=backtest_summary,
         )

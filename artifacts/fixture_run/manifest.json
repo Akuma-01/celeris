@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261122_202436_785fc9",
-  "run_timestamp": "2026-11-22T20:24:36.080186+00:00",
+  "run_id": "run_20261123_051922_04d9ee",
+  "run_timestamp": "2026-11-23T05:19:22.669377+00:00",
   "run_mode": "fixture",
   "is_fixture": true,
   "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
@@ -62,14 +62,211 @@
     "unobserved_missing_rows": 95,
     "quality_issues_logged": 1,
     "anomalies_logged": 134,
-    "total_reconstructed_demand": 21052.0
+    "total_reconstructed_demand": 21052.0,
+    "backtest_rows": 684,
+    "leakage_check_passed": true,
+    "selected_winning_model": "pooled_direct",
+    "development_metrics": {
+      "seasonal_naive": {
+        "wape": 0.1085,
+        "signed_bias": -0.1028,
+        "total_actual": 8785.0,
+        "total_forecast": 7882.0,
+        "rows": 114
+      },
+      "trailing_mean": {
+        "wape": 0.1871,
+        "signed_bias": -0.0667,
+        "total_actual": 8785.0,
+        "total_forecast": 8199.0,
+        "rows": 114
+      },
+      "pooled_direct": {
+        "wape": 0.0983,
+        "signed_bias": -0.0927,
+        "total_actual": 8785.0,
+        "total_forecast": 7971.0,
+        "rows": 114
+      }
+    },
+    "frozen_holdout_metrics": {
+      "seasonal_naive": {
+        "wape": 0.0916,
+        "signed_bias": -0.0916,
+        "total_actual": 5349.0,
+        "total_forecast": 4859.0,
+        "rows": 57
+      },
+      "trailing_mean": {
+        "wape": 0.092,
+        "signed_bias": -0.0729,
+        "total_actual": 5349.0,
+        "total_forecast": 4959.0,
+        "rows": 57
+      },
+      "pooled_direct": {
+        "wape": 0.0806,
+        "signed_bias": -0.0458,
+        "total_actual": 5349.0,
+        "total_forecast": 5104.0,
+        "rows": 57
+      }
+    }
   },
   "metadata": {
-    "stage": "milestone_2_cleaning_and_demand",
+    "stage": "milestone_3_features_and_models",
     "published_artifacts": {
       "history": "artifacts/fixture_run/history.parquet",
       "quality": "artifacts/fixture_run/quality.parquet",
-      "anomalies": "artifacts/fixture_run/anomalies.parquet"
+      "anomalies": "artifacts/fixture_run/anomalies.parquet",
+      "backtest": "artifacts/fixture_run/backtest.parquet"
+    },
+    "backtest_summary": {
+      "development_metrics": {
+        "seasonal_naive": {
+          "wape": 0.1085,
+          "signed_bias": -0.1028,
+          "total_actual": 8785.0,
+          "total_forecast": 7882.0,
+          "rows": 114
+        },
+        "trailing_mean": {
+          "wape": 0.1871,
+          "signed_bias": -0.0667,
+          "total_actual": 8785.0,
+          "total_forecast": 8199.0,
+          "rows": 114
+        },
+        "pooled_direct": {
+          "wape": 0.0983,
+          "signed_bias": -0.0927,
+          "total_actual": 8785.0,
+          "total_forecast": 7971.0,
+          "rows": 114
+        }
+      },
+      "selected_winner": "pooled_direct",
+      "frozen_holdout_metrics": {
+        "seasonal_naive": {
+          "wape": 0.0916,
+          "signed_bias": -0.0916,
+          "total_actual": 5349.0,
+          "total_forecast": 4859.0,
+          "rows": 57
+        },
+        "trailing_mean": {
+          "wape": 0.092,
+          "signed_bias": -0.0729,
+          "total_actual": 5349.0,
+          "total_forecast": 4959.0,
+          "rows": 57
+        },
+        "pooled_direct": {
+          "wape": 0.0806,
+          "signed_bias": -0.0458,
+          "total_actual": 5349.0,
+          "total_forecast": 5104.0,
+          "rows": 57
+        }
+      },
+      "per_fold_metrics": {
+        "Fold_1": {
+          "seasonal_naive": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1204,
+            "signed_bias": -0.1204,
+            "total_actual": 4178.0,
+            "total_forecast": 3675.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1999,
+            "signed_bias": -0.0677,
+            "total_actual": 4178.0,
+            "total_forecast": 3895.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1146,
+            "signed_bias": -0.1075,
+            "total_actual": 4178.0,
+            "total_forecast": 3729.0,
+            "scored_rows": 57
+          }
+        },
+        "Fold_2": {
+          "seasonal_naive": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.0977,
+            "signed_bias": -0.0868,
+            "total_actual": 4607.0,
+            "total_forecast": 4207.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.1756,
+            "signed_bias": -0.0658,
+            "total_actual": 4607.0,
+            "total_forecast": 4304.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.0836,
+            "signed_bias": -0.0792,
+            "total_actual": 4607.0,
+            "total_forecast": 4242.0,
+            "scored_rows": 57
+          }
+        },
+        "Fold_3_Frozen_Holdout": {
+          "seasonal_naive": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0916,
+            "signed_bias": -0.0916,
+            "total_actual": 5349.0,
+            "total_forecast": 4859.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.092,
+            "signed_bias": -0.0729,
+            "total_actual": 5349.0,
+            "total_forecast": 4959.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0806,
+            "signed_bias": -0.0458,
+            "total_actual": 5349.0,
+            "total_forecast": 5104.0,
+            "scored_rows": 57
+          }
+        }
+      }
     }
   }
 }
