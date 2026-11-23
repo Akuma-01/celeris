@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261123_051922_04d9ee",
-  "run_timestamp": "2026-11-23T05:19:22.669377+00:00",
+  "run_id": "run_20261123_075520_f3bfe3",
+  "run_timestamp": "2026-11-23T07:55:20.437960+00:00",
   "run_mode": "fixture",
   "is_fixture": true,
   "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
@@ -111,15 +111,21 @@
         "total_forecast": 5104.0,
         "rows": 57
       }
-    }
+    },
+    "submission_rows": 76,
+    "submission_total_units": 5480,
+    "submission_projected_revenue": 1523749.5,
+    "submission_validation_passed": true
   },
   "metadata": {
-    "stage": "milestone_3_features_and_models",
+    "stage": "milestone_4_forecast_and_submission",
     "published_artifacts": {
       "history": "artifacts/fixture_run/history.parquet",
       "quality": "artifacts/fixture_run/quality.parquet",
       "anomalies": "artifacts/fixture_run/anomalies.parquet",
-      "backtest": "artifacts/fixture_run/backtest.parquet"
+      "backtest": "artifacts/fixture_run/backtest.parquet",
+      "forecast": "artifacts/fixture_run/forecast.parquet",
+      "submission": "artifacts/fixture_run/submission.csv"
     },
     "backtest_summary": {
       "development_metrics": {
@@ -267,6 +273,23 @@
           }
         }
       }
+    },
+    "submission_validation": {
+      "is_valid": true,
+      "total_rows": 76,
+      "columns": [
+        "Date",
+        "SKU_ID",
+        "Region",
+        "Units_Sold_Forecast"
+      ],
+      "notes": [
+        "Column order matches exactly: Date, SKU_ID, Region, Units_Sold_Forecast",
+        "Row count verified: 76 rows",
+        "Key sequence and multiplicity match test file identically.",
+        "No nulls or blank values found.",
+        "100% value agreement between submission.csv and forecast.parquet."
+      ]
     }
   }
 }

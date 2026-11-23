@@ -15,6 +15,12 @@ import pandas as pd
 from celeris.clean import clean_history_transactions, QualityRecord
 from celeris.demand import reconstruct_demand_and_anomalies, AnomalyRecord
 from celeris.backtest import run_full_backtest, verify_leakage_safety, DEFAULT_FOLDS
+from celeris.publish import (
+    generate_final_forecast,
+    derive_submission,
+    validate_submission,
+    SubmissionValidationReport,
+)
 from celeris.ingest import (
     DiagnosticReport,
     diagnose_input_directory,
@@ -38,10 +44,11 @@ class PipelineRunResult:
     report: DiagnosticReport
     published_artifacts: Dict[str, str]
     backtest_summary: Optional[Dict[str, Any]] = None
+    submission_validation: Optional[SubmissionValidationReport] = None
 
 
 class PipelineRunner:
-    """Coordinates ingestion, role resolution, diagnostics, cleaning, backtesting, and publication."""
+    """Coordinates ingestion, role resolution, diagnostics, cleaning, backtesting, forecast, and publication."""
 
     def __init__(
         self,
@@ -74,7 +81,7 @@ class PipelineRunner:
         return report
 
     def run(self) -> PipelineRunResult:
-        """Execute pipeline with contract enforcement, cleaning, backtesting, and staging."""
+        """Execute pipeline with contract enforcement, cleaning, backtesting, forecast, and publication."""
         self.out_dir.mkdir(parents=True, exist_ok=True)
         report = self.diagnose(save_report=True)
 
@@ -101,7 +108,7 @@ class PipelineRunner:
                     "summary_notes": report.summary_notes,
                 },
                 metadata={
-                    "stage": "milestone_3_features_and_models",
+                    "stage": "milestone_4_forecast_and_submission",
                     "execution_halted_reason": "Missing historical ERP sales extract. Halting before training or publishing.",
                 },
             )
@@ -131,16 +138,19 @@ class PipelineRunner:
         staging_dir.mkdir(parents=True, exist_ok=True)
 
         history_files = report.role_mapping.get(DatasetRole.HISTORY.value, [])
+        forecast_files = report.role_mapping.get(DatasetRole.FORECAST_ROWS.value, [])
         sku_master_files = report.role_mapping.get(DatasetRole.SKU_MASTER.value, [])
         stockouts_files = report.role_mapping.get(DatasetRole.STOCKOUTS.value, [])
         events_files = report.role_mapping.get(DatasetRole.EVENTS_CALENDAR.value, [])
 
         history_path = self.data_dir / history_files[0]
+        forecast_path = self.data_dir / forecast_files[0]
         sku_master_path = self.data_dir / sku_master_files[0]
         stockouts_path = self.data_dir / stockouts_files[0] if stockouts_files else None
         events_path = self.data_dir / events_files[0] if events_files else None
 
         raw_history_df = pd.read_csv(history_path)
+        forecast_keys_df = pd.read_csv(forecast_path)
         sku_master_df = pd.read_csv(sku_master_path) if sku_master_path.exists() else pd.DataFrame()
         stockouts_df = pd.read_csv(stockouts_path) if stockouts_path and stockouts_path.exists() else None
         events_df = pd.read_csv(events_path) if events_path and events_path.exists() else None
@@ -162,11 +172,26 @@ class PipelineRunner:
 
         # Step 3: Run 19-month Backtest protocol across 3 folds and verify leakage safety
         backtest_df, backtest_summary = run_full_backtest(history_panel_df, DEFAULT_FOLDS)
-
-        # Leakage verification on Fold 1
         leakage_passed = verify_leakage_safety(history_panel_df, DEFAULT_FOLDS[0])
+        winning_model = backtest_summary["selected_winner"]
 
-        # Step 4: Materialize dataframes
+        # Step 4: Final forecast generation and submission derivation
+        forecast_df = generate_final_forecast(
+            history_df=history_panel_df,
+            forecast_keys_df=forecast_keys_df,
+            sku_master_df=sku_master_df,
+            winning_model_name=winning_model,
+            events_df=events_df,
+            cutoff_date="2026-10",
+        )
+        submission_df = derive_submission(forecast_df)
+
+        # Validate submission strictly
+        val_report = validate_submission(submission_df, forecast_keys_df, forecast_df)
+        if not val_report.is_valid:
+            raise ValueError(f"Submission validation failed: {val_report.notes}")
+
+        # Step 5: Materialize dataframes
         quality_df = pd.DataFrame([q.to_dict() for q in quality_records])
         if quality_df.empty:
             quality_df = pd.DataFrame(columns=[
@@ -182,36 +207,46 @@ class PipelineRunner:
                 "confidence", "action", "reason", "linked_evidence"
             ])
 
-        # Step 5: Save published Parquet tables
+        # Step 6: Save published artifacts
         history_parquet = staging_dir / "history.parquet"
         quality_parquet = staging_dir / "quality.parquet"
         anomalies_parquet = staging_dir / "anomalies.parquet"
         backtest_parquet = staging_dir / "backtest.parquet"
+        forecast_parquet = staging_dir / "forecast.parquet"
+        submission_csv = staging_dir / "submission.csv"
 
         history_panel_df.to_parquet(history_parquet, index=False)
         quality_df.to_parquet(quality_parquet, index=False)
         anomalies_df.to_parquet(anomalies_parquet, index=False)
         backtest_df.to_parquet(backtest_parquet, index=False)
+        forecast_df.to_parquet(forecast_parquet, index=False)
+        submission_df.to_csv(submission_csv, index=False)
 
         # Copy to out_dir
         final_history = self.out_dir / "history.parquet"
         final_quality = self.out_dir / "quality.parquet"
         final_anomalies = self.out_dir / "anomalies.parquet"
         final_backtest = self.out_dir / "backtest.parquet"
+        final_forecast = self.out_dir / "forecast.parquet"
+        final_submission = self.out_dir / "submission.csv"
 
         shutil.copy2(history_parquet, final_history)
         shutil.copy2(quality_parquet, final_quality)
         shutil.copy2(anomalies_parquet, final_anomalies)
         shutil.copy2(backtest_parquet, final_backtest)
+        shutil.copy2(forecast_parquet, final_forecast)
+        shutil.copy2(submission_csv, final_submission)
 
         published_artifacts = {
             "history": str(final_history),
             "quality": str(final_quality),
             "anomalies": str(final_anomalies),
             "backtest": str(final_backtest),
+            "forecast": str(final_forecast),
+            "submission": str(final_submission),
         }
 
-        # Manifest
+        # Step 7: Manifest recording
         manifest = RunManifest(
             run_id=self.run_id,
             run_timestamp=timestamp,
@@ -237,14 +272,24 @@ class PipelineRunner:
                 "total_reconstructed_demand": float(history_panel_df["reconstructed_demand"].sum(skipna=True)),
                 "backtest_rows": len(backtest_df),
                 "leakage_check_passed": leakage_passed,
-                "selected_winning_model": backtest_summary["selected_winner"],
+                "selected_winning_model": winning_model,
                 "development_metrics": backtest_summary["development_metrics"],
                 "frozen_holdout_metrics": backtest_summary["frozen_holdout_metrics"],
+                "submission_rows": val_report.total_rows,
+                "submission_total_units": val_report.total_units_forecast,
+                "submission_projected_revenue": val_report.total_projected_revenue,
+                "submission_validation_passed": val_report.is_valid,
             },
             metadata={
-                "stage": "milestone_3_features_and_models",
+                "stage": "milestone_4_forecast_and_submission",
                 "published_artifacts": published_artifacts,
                 "backtest_summary": backtest_summary,
+                "submission_validation": {
+                    "is_valid": val_report.is_valid,
+                    "total_rows": val_report.total_rows,
+                    "columns": val_report.columns,
+                    "notes": val_report.notes,
+                },
             },
         )
         staging_manifest = staging_dir / "manifest.json"
@@ -263,19 +308,13 @@ class PipelineRunner:
                 "published_artifacts": published_artifacts,
             }, f, indent=2)
 
-        winner = backtest_summary["selected_winner"]
-        dev_wape = backtest_summary["development_metrics"][winner]["wape"]
-        dev_bias = backtest_summary["development_metrics"][winner]["signed_bias"]
-        holdout_wape = backtest_summary["frozen_holdout_metrics"][winner]["wape"]
-        holdout_bias = backtest_summary["frozen_holdout_metrics"][winner]["signed_bias"]
-
         msg = (
             f"Run {self.run_id} SUCCESS ({run_mode.upper()} MODE):\n"
-            f"19-Month Backtest: 3 Folds evaluated ({len(backtest_df)} backtest prediction rows).\n"
-            f"Leakage Check: {'PASSED' if leakage_passed else 'FAILED'}.\n"
-            f"Selected Winning Model (Dev Folds): {winner.upper()} (Dev WAPE: {dev_wape:.2%}, Signed Bias: {dev_bias:+.2%})\n"
-            f"Frozen Holdout Evaluation (Fold 3): WAPE: {holdout_wape:.2%}, Signed Bias: {holdout_bias:+.2%}\n"
-            f"Published: history.parquet, quality.parquet, anomalies.parquet, backtest.parquet\n"
+            f"Forecast published: {len(forecast_df)} rows in forecast.parquet\n"
+            f"Submission derived: {len(submission_df)} rows in submission.csv\n"
+            f"Validation: 100% verified (exact 4 columns, exact key sequence, no nulls, non-negative integers)\n"
+            f"Total Forecast Units: {val_report.total_units_forecast:,} units | Projected Revenue: ${val_report.total_projected_revenue:,.2f}\n"
+            f"Published artifacts: {list(published_artifacts.keys())}\n"
             f"Manifest saved to {manifest_path}"
         )
         return PipelineRunResult(
@@ -290,4 +329,5 @@ class PipelineRunner:
             report=report,
             published_artifacts=published_artifacts,
             backtest_summary=backtest_summary,
+            submission_validation=val_report,
         )

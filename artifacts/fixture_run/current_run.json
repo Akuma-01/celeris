@@ -1,12 +1,14 @@
 {
-  "current_run_id": "run_20261123_051922_04d9ee",
+  "current_run_id": "run_20261123_075520_f3bfe3",
   "run_mode": "fixture",
-  "timestamp": "2026-11-23T05:19:22.669377+00:00",
+  "timestamp": "2026-11-23T07:55:20.437960+00:00",
   "manifest": "artifacts/fixture_run/manifest.json",
   "published_artifacts": {
     "history": "artifacts/fixture_run/history.parquet",
     "quality": "artifacts/fixture_run/quality.parquet",
     "anomalies": "artifacts/fixture_run/anomalies.parquet",
-    "backtest": "artifacts/fixture_run/backtest.parquet"
+    "backtest": "artifacts/fixture_run/backtest.parquet",
+    "forecast": "artifacts/fixture_run/forecast.parquet",
+    "submission": "artifacts/fixture_run/submission.csv"
   }
 }
