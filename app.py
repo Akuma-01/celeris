@@ -165,8 +165,16 @@ def main():
     st.sidebar.markdown("**Demand Planning Control Tower**")
 
     # Select Artifact Directory
-    default_dir = "artifacts/fixture_run" if Path("artifacts/fixture_run").exists() else "artifacts"
-    artifact_dir = st.sidebar.text_input("Artifacts Directory", value=default_dir)
+    available_dirs = []
+    if Path("artifacts/real_run").exists():
+        available_dirs.append("artifacts/real_run")
+    if Path("artifacts/fixture_run").exists():
+        available_dirs.append("artifacts/fixture_run")
+    if not available_dirs:
+        available_dirs = ["artifacts"]
+
+    selected_run = st.sidebar.selectbox("Active Artifact Run", options=available_dirs, index=0)
+    artifact_dir = st.sidebar.text_input("Or Custom Directory", value=selected_run)
 
     data = load_data(artifact_dir)
     manifest = data.get("manifest", {})

@@ -96,3 +96,27 @@ def test_filtered_totals_reconciliation_by_sku(published_data):
     assert int(filt_forecast["Units_Sold_Forecast"].sum()) == int(true_fct_slice["Units_Sold_Forecast"].sum())
     assert len(filt_history) == len(true_hist_slice)
     assert len(filt_anomalies) == len(true_anom_slice)
+
+
+def test_real_run_artifacts_loading_and_reconciliation():
+    """Verify that dashboard load_data loads and reconciles real_run artifacts cleanly if present."""
+    real_path = Path("artifacts/real_run")
+    if not real_path.exists():
+        pytest.skip("artifacts/real_run does not exist")
+
+    data = load_data("artifacts/real_run")
+    assert not data["history"].empty
+    assert not data["forecast"].empty
+    assert not data["quality"].empty
+    assert not data["anomalies"].empty
+    assert not data["backtest"].empty
+    assert not data["stockouts"].empty
+    assert not data["sku_master"].empty
+    assert not data["macro_lead_lag"].empty
+    assert data["manifest"]["run_mode"] == "real"
+
+    # Reconciliation check
+    forecast_df = data["forecast"]
+    assert len(forecast_df) == 58219
+    sub_df = pd.read_csv("artifacts/real_run/submission.csv")
+    assert int(forecast_df["Units_Sold_Forecast"].sum()) == int(sub_df["Units_Sold_Forecast"].sum())
