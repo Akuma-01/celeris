@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-Celeris Automobili Industrial manufactures and distributes high-performance automotive sub-assemblies, powertrains, battery modules, brake components, chassis systems, and industrial fleet parts. Operating in a complex global supply chain across six regions (North America, Europe, Asia-Pacific, Latin America, Middle East, Africa), Celeris has historically suffered from severe bullwhip distortions caused by:
+Celeris Automobili Industrial manufactures and distributes high-performance automotive sub-assemblies, powertrains, battery modules, brake components, chassis systems, and industrial fleet parts. Operating in a complex global supply chain across six sales regions (North America, Europe, Asia Pacific, India, Latin America, Middle East & Africa), Celeris has historically suffered from severe bullwhip distortions caused by:
 1. **Unobserved Stockouts & Lost Sales**: When component inventory was depleted, unfulfilled customer demand was omitted from transaction logs, masking true market demand.
 2. **Backlog Whiplash**: Late fulfillments of backordered parts were recorded in subsequent periods, artificially inflating reported sales spikes.
 3. **Product Lifecycle Transitions**: Rapid EV adoption, mid-cycle component refreshes, and End-of-Life (EOL) parts created cold-start forecasting gaps and obsolete inventory risks.
@@ -107,15 +107,15 @@ In real-world enterprise deployments and competition datasets, physical filename
 Data warehouses often re-extract overlapping transaction records with updated timestamps. `celeris.clean` groups by `Record_ID` and retains strictly the record with the maximum `Load_Timestamp`. All superseded duplicate transactions are logged to `quality.parquet` with the action code `deduplicated_latest_load`.
 
 ### 2.3 Regional & Channel Entity Normalization
-Raw transactions contained 29 regional variants (e.g., `"NA"`, `"N. America"`, `"US/CA"`, `"EMEA"`, `"Europe West"`, `"APAC"`, `"Asia-Pac"`, `"Latin-Am"`, `"MENA"`, `"Sub-Saharan Africa"`). The cleaning layer standardizes all entries into the 6 canonical corporate sales regions:
+Raw transactions contained 29 regional variants (e.g., `"NA"`, `"N. America"`, `"US/CA"`, `"EU"`, `"Europe"`, `"APAC"`, `"Asia Pacific"`, `"India"`, `"Latin-Am"`, `"LATAM"`, `"MENA"`, `"ME&A"`). The cleaning layer standardizes all entries into the 6 canonical corporate sales regions:
 - `North America`
 - `Europe`
-- `Asia-Pacific`
+- `Asia Pacific`
+- `India`
 - `Latin America`
-- `Middle East`
-- `Africa`
+- `Middle East & Africa`
 
-Channel strings are normalized into the three standard routes to market: `OEM`, `Aftermarket`, and `Fleet`.
+Channel strings are normalized into the four standard routes to market: `Direct OEM`, `Tier-1 Distributor`, `Aftermarket`, and `Export`.
 
 ---
 

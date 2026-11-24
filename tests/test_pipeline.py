@@ -80,3 +80,28 @@ def test_pipeline_run_on_fixture_succeeds(
     with open(pointer_file, "r") as f:
         pointer = json.load(f)
     assert pointer["current_run_id"] == runner.run_id
+
+
+def test_cli_main_diagnose_and_help(student_data_dir: Path, tmp_path: Path):
+    """Verify celeris CLI main function handles help, version, and diagnose commands."""
+    from celeris.__main__ import main
+
+    # 1. No arguments prints help and returns 1
+    assert main([]) == 1
+
+    # 2. Diagnose student_data returns 0
+    diag_out = tmp_path / "cli_diag"
+    exit_code = main(["diagnose", "--data", str(student_data_dir), "--out", str(diag_out)])
+    assert exit_code == 0
+    assert (diag_out / "diagnostics.json").exists()
+    assert (diag_out / "diagnostics.txt").exists()
+
+
+def test_cli_parser_version():
+    """Verify CLI parser has registered version argument."""
+    from celeris.__main__ import build_parser
+
+    parser = build_parser()
+    actions = [a.dest for a in parser._actions]
+    assert "version" in actions or any("-v" in a.option_strings for a in parser._actions)
+

@@ -16,6 +16,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="celeris",
         description="Celeris Automobili Industrial Demand Forecasting & Planning Pipeline",
     )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version="celeris 0.1.0",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Command: run
