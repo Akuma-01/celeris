@@ -2,49 +2,37 @@
 CELERIS AUTOMOBILI — INPUT INVENTORY & ROLE RESOLUTION REPORT
 ================================================================================
 Directory: /home/akuma/projects/hackathon/celeris/student_data
-Timestamp: 2026-11-23T16:38:53.026434+00:00
-Status   : BLOCKED
-Blocker  : Historical ERP sales extract is MISSING. Expected columns: ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']. Identifying columns required: Record_ID, Units_Sold, Load_Timestamp.
+Timestamp: 2026-11-24T12:48:52.718040+00:00
+Status   : READY
 --------------------------------------------------------------------------------
 
 1. PHYSICAL FILES INVENTORY:
 Filename                         Size      Rows   Cols Resolved Role         Score
 --------------------------------------------------------------------------------
 events_calendar.csv            6.3 KB        68      7 events_calendar        1.00
-inventory_stockouts.csv        6.3 KB        68      7 events_calendar        1.00
-macro_indicators.csv         409.9 KB     5,830     11 stockouts              1.00
-sample_submission.csv          6.6 KB       114     11 macro_indicators       1.00
-sku_master.csv                 0.2 KB         5      4 sample_submission      1.00
-test.csv                      74.5 KB       601     10 sku_master             1.00
-train.csv                      8.2 MB    58,219     10 forecast_rows          1.00
+inventory_stockouts.csv      409.9 KB     5,830     11 stockouts              1.00
+macro_indicators.csv           6.6 KB       114     11 macro_indicators       1.00
+sample_submission.csv          0.2 KB         5      4 sample_submission      1.00
+sku_master.csv                74.5 KB       601     10 sku_master             1.00
+test.csv                       8.2 MB    58,219     10 forecast_rows          1.00
+train.csv                     46.6 MB   248,248     15 history                1.00
 
 2. SEVEN DATASET ROLES RESOLUTION:
 Dataset Role         Display Name                 Mapped File(s)                
 --------------------------------------------------------------------------------
-history              Historical ERP Sales         MISSING                        [MISSING]
-forecast_rows        Rows to Forecast (Test Keys) train.csv                      [OK]
-sku_master           SKU Master                   test.csv                       [OK]
-sample_submission    Sample Submission            sku_master.csv                 [OK]
-macro_indicators     Macro Indicators             sample_submission.csv          [OK]
-stockouts            Stockout Ledger              macro_indicators.csv           [OK]
-events_calendar      Events Calendar              events_calendar.csv, inventory_stockouts.csv [OK]
-
-3. CALENDAR ROLE MULTI-FILE RECONCILIATION:
-  Files claiming role : events_calendar.csv, inventory_stockouts.csv
-  Bitwise identical   : True
-  Row counts          : {'events_calendar.csv': 68, 'inventory_stockouts.csv': 68}
-  Note                : All 2 files are bitwise identical (SHA256: bf45c00afcf9...).
+history              Historical ERP Sales         train.csv                      [OK]
+forecast_rows        Rows to Forecast (Test Keys) test.csv                       [OK]
+sku_master           SKU Master                   sku_master.csv                 [OK]
+sample_submission    Sample Submission            sample_submission.csv          [OK]
+macro_indicators     Macro Indicators             macro_indicators.csv           [OK]
+stockouts            Stockout Ledger              inventory_stockouts.csv        [OK]
+events_calendar      Events Calendar              events_calendar.csv            [OK]
 
 4. FORECAST KEYS (TEST SET) INSPECTION:
-  File name           : train.csv
+  File name           : test.csv
   Total forecast rows : 58,219
   Forecast window     : 2026-11 to 2028-05 (19 months, expected 19)
   Planning scope      : 595 SKUs across 6 regions
   Target column absent: True (Correct for forecast keys)
-
-5. MISSING ROLE DETAILS:
-  * Historical ERP Sales (history):
-    - Required identifying columns: ['Load_Timestamp', 'Record_ID', 'Units_Sold']
-    - Full expected columns       : ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']
 
 ================================================================================

@@ -1,8 +1,8 @@
 {
   "directory": "/home/akuma/projects/hackathon/celeris/student_data",
-  "timestamp": "2026-11-23T16:38:53.026434+00:00",
-  "is_ready": false,
-  "blocker_message": "Historical ERP sales extract is MISSING. Expected columns: ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']. Identifying columns required: Record_ID, Units_Sold, Load_Timestamp.",
+  "timestamp": "2026-11-24T12:48:52.718040+00:00",
+  "is_ready": true,
+  "blocker_message": null,
   "files_scanned": [
     {
       "file_name": "events_calendar.csv",
@@ -30,29 +30,6 @@
     {
       "file_name": "inventory_stockouts.csv",
       "file_path": "/home/akuma/projects/hackathon/celeris/student_data/inventory_stockouts.csv",
-      "file_size_bytes": 6406,
-      "row_count": 68,
-      "column_count": 7,
-      "columns": [
-        "Event_ID",
-        "Start_Date",
-        "End_Date",
-        "Scope_Type",
-        "Scope_Value",
-        "Event_Type",
-        "Description"
-      ],
-      "sha256_hash": "bf45c00afcf946eee0339037348f930d847a55cc3f1cd2c461fdffb9eaf77942",
-      "matched_role": "events_calendar",
-      "confidence_score": 1.0,
-      "match_notes": [
-        "Matched 5 distinguishing columns: ['Description', 'Event_ID', 'Event_Type', 'Scope_Type', 'Scope_Value']",
-        "Total column overlap: 7/7"
-      ]
-    },
-    {
-      "file_name": "macro_indicators.csv",
-      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/macro_indicators.csv",
       "file_size_bytes": 419781,
       "row_count": 5830,
       "column_count": 11,
@@ -78,8 +55,8 @@
       ]
     },
     {
-      "file_name": "sample_submission.csv",
-      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/sample_submission.csv",
+      "file_name": "macro_indicators.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/macro_indicators.csv",
       "file_size_bytes": 6709,
       "row_count": 114,
       "column_count": 11,
@@ -105,8 +82,8 @@
       ]
     },
     {
-      "file_name": "sku_master.csv",
-      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/sku_master.csv",
+      "file_name": "sample_submission.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/sample_submission.csv",
       "file_size_bytes": 210,
       "row_count": 5,
       "column_count": 4,
@@ -125,8 +102,8 @@
       ]
     },
     {
-      "file_name": "test.csv",
-      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/test.csv",
+      "file_name": "sku_master.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/sku_master.csv",
       "file_size_bytes": 76253,
       "row_count": 601,
       "column_count": 10,
@@ -151,8 +128,8 @@
       ]
     },
     {
-      "file_name": "train.csv",
-      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/train.csv",
+      "file_name": "test.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/test.csv",
       "file_size_bytes": 8619404,
       "row_count": 58219,
       "column_count": 10,
@@ -175,52 +152,66 @@
         "Matched 4 distinguishing columns: ['Business_Unit', 'Customer_Name', 'Product_Family', 'Sales_Channel']",
         "Total column overlap: 10/10"
       ]
+    },
+    {
+      "file_name": "train.csv",
+      "file_path": "/home/akuma/projects/hackathon/celeris/student_data/train.csv",
+      "file_size_bytes": 48834690,
+      "row_count": 248248,
+      "column_count": 15,
+      "columns": [
+        "Record_ID",
+        "Date",
+        "Year",
+        "Month",
+        "Product_Family",
+        "Business_Unit",
+        "SKU_ID",
+        "SKU_Description",
+        "Customer_Name",
+        "Sales_Channel",
+        "Region",
+        "Units_Sold",
+        "Unit_Price_USD",
+        "Revenue_USD",
+        "Load_Timestamp"
+      ],
+      "sha256_hash": "2bfc753f147f61c65e701d003332833eb0a582540d9f0fb3d1fc43153c8a0bc4",
+      "matched_role": "history",
+      "confidence_score": 1.0,
+      "match_notes": [
+        "Matched 5 distinguishing columns: ['Load_Timestamp', 'Record_ID', 'Revenue_USD', 'Unit_Price_USD', 'Units_Sold']",
+        "Total column overlap: 15/15"
+      ]
     }
   ],
   "role_mapping": {
-    "history": [],
-    "forecast_rows": [
+    "history": [
       "train.csv"
     ],
-    "sku_master": [
+    "forecast_rows": [
       "test.csv"
     ],
-    "sample_submission": [
+    "sku_master": [
       "sku_master.csv"
     ],
-    "macro_indicators": [
+    "sample_submission": [
       "sample_submission.csv"
     ],
-    "stockouts": [
+    "macro_indicators": [
       "macro_indicators.csv"
     ],
-    "events_calendar": [
-      "events_calendar.csv",
-      "inventory_stockouts.csv"
-    ]
-  },
-  "missing_roles": [
-    "history"
-  ],
-  "calendar_comparison": {
-    "file_names": [
-      "events_calendar.csv",
+    "stockouts": [
       "inventory_stockouts.csv"
     ],
-    "are_byte_identical": true,
-    "are_content_identical": true,
-    "row_counts": {
-      "events_calendar.csv": 68,
-      "inventory_stockouts.csv": 68
-    },
-    "shared_event_count": 68,
-    "conflicting_event_count": 0,
-    "notes": [
-      "All 2 files are bitwise identical (SHA256: bf45c00afcf9...)."
+    "events_calendar": [
+      "events_calendar.csv"
     ]
   },
+  "missing_roles": [],
+  "calendar_comparison": null,
   "forecast_keys_profile": {
-    "file_name": "train.csv",
+    "file_name": "test.csv",
     "total_rows": 58219,
     "min_date": "2026-11",
     "max_date": "2028-05",
@@ -236,8 +227,7 @@
     ]
   },
   "summary_notes": [
-    "BLOCKER: Historical ERP sales extract is MISSING. Expected columns: ['Record_ID', 'Date', 'Year', 'Month', 'Product_Family', 'Business_Unit', 'SKU_ID', 'SKU_Description', 'Customer_Name', 'Sales_Channel', 'Region', 'Units_Sold', 'Unit_Price_USD', 'Revenue_USD', 'Load_Timestamp']. Identifying columns required: Record_ID, Units_Sold, Load_Timestamp.",
-    "Resolved duplicate calendar role: ['events_calendar.csv', 'inventory_stockouts.csv'] are byte-identical. Deduplicating safely.",
-    "Forecast rows resolved in train.csv: 58,219 rows covering 2026-11 to 2028-05 (19 months)."
+    "Forecast rows resolved in test.csv: 58,219 rows covering 2026-11 to 2028-05 (19 months).",
+    "All seven dataset roles successfully resolved."
   ]
 }

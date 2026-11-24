@@ -13,6 +13,7 @@ from celeris.forecast import (
     PooledDirectModel,
     CrostonSBAModel,
     IntermittentChallengerModel,
+    EnsembleModel,
 )
 from celeris.publish import derive_submission, validate_submission
 from celeris.macro import analyze_macro_lead_lag, match_scoped_events
@@ -76,6 +77,7 @@ def test_all_models_polymorphic_predict_signature():
         CrostonSBAModel().fit(df, "2020-12"),
         PooledDirectModel().fit(df, "2020-12"),
         IntermittentChallengerModel().fit(df, "2020-12"),
+        EnsembleModel().fit(df, "2020-12"),
     ]
 
     for m in models:

@@ -13,6 +13,7 @@ from celeris.forecast import (
     TrailingMeanModel,
     PooledDirectModel,
     IntermittentChallengerModel,
+    EnsembleModel,
 )
 
 
@@ -101,104 +102,182 @@ def generate_final_forecast(
     snaive = SeasonalNaiveModel().fit(as_of_history, cutoff_date)
     tmean = TrailingMeanModel().fit(as_of_history, cutoff_date)
     pooled = PooledDirectModel().fit(as_of_history, cutoff_date)
-    intermittent = IntermittentChallengerModel().fit(as_of_history, cutoff_date)
+    intermittent = IntermittentChallengerModel().fit(as_of_history, cutoff_date, pooled_model=pooled)
+    ensemble = EnsembleModel().fit(as_of_history, cutoff_date, snaive=snaive, pooled=pooled, tmean=tmean)
 
     models = {
         "seasonal_naive": snaive,
         "trailing_mean": tmean,
         "pooled_direct": pooled,
         "intermittent_challenger": intermittent,
+        "ensemble": ensemble,
     }
     selected_model = models.get(winning_model_name, pooled)
 
     # SKU master metadata lookup
     sku_meta: Dict[str, dict] = {}
     if not sku_master_df.empty:
-        for _, r in sku_master_df.iterrows():
-            sku_meta[str(r["SKU_ID"])] = r.to_dict()
+        for r in sku_master_df.to_dict("records"):
+            sku_meta[str(r["SKU_ID"])] = r
 
     # Historical prices lookup
-    last_prices: Dict[str, float] = {}
-    for sku, group in as_of_history.groupby("SKU_ID"):
-        p = group["Unit_Price_USD"].dropna()
-        if not p.empty:
-            last_prices[sku] = float(p.iloc[-1])
+    valid_prices = as_of_history.dropna(subset=["Unit_Price_USD"])
+    if not valid_prices.empty:
+        last_prices = valid_prices.groupby("SKU_ID")["Unit_Price_USD"].last().to_dict()
+    else:
+        last_prices = {}
+
+    base_price_by_sku: Dict[str, float] = {}
+    for sku, meta in sku_meta.items():
+        if sku in last_prices and last_prices[sku] > 0:
+            base_price_by_sku[sku] = float(last_prices[sku])
+        else:
+            pred_sku = str(meta.get("Replaces_SKU", "")).strip() if pd.notna(meta.get("Replaces_SKU")) else ""
+            if pred_sku and pred_sku in last_prices and last_prices[pred_sku] > 0:
+                base_price_by_sku[sku] = float(last_prices[pred_sku])
+            else:
+                base_price_by_sku[sku] = 100.0
 
     # Historical series observed
     observed_series = set(zip(as_of_history["SKU_ID"], as_of_history["Region"]))
 
-    forecast_rows: List[dict] = []
-
-    for _, row in forecast_keys_df.iterrows():
-        d = str(row["Date"]).strip()
-        sku = str(row["SKU_ID"]).strip()
-        reg = str(row["Region"]).strip()
-
-        meta = sku_meta.get(sku, {})
-        launch_date = str(meta.get("Launch_Date", "")).strip() if pd.notna(meta.get("Launch_Date")) else ""
-        eol_date = str(meta.get("EOL_Date", "")).strip() if pd.notna(meta.get("EOL_Date")) else ""
-        replaces_sku = str(meta.get("Replaces_SKU", "")).strip() if pd.notna(meta.get("Replaces_SKU")) else ""
-
-        h = compute_horizon(d, cutoff_date)
-
-        # 1. Lifecycle Check: Post-EOL
-        if eol_date and d > eol_date:
-            point_forecast = 0
-            model_or_fallback = "lifecycle_post_eol"
-            lifecycle_status = "Discontinued"
-
-        # 2. Lifecycle Check: Pre-Launch
-        elif launch_date and d < launch_date:
-            point_forecast = 0
-            model_or_fallback = "lifecycle_pre_launch"
-            lifecycle_status = "Planned Launch"
-
-        # 3. Active Lifecycle
+    # Pre-calculate family averages
+    family_averages: Dict[str, int] = {}
+    for fam, group in as_of_history.groupby("Product_Family"):
+        tail = group["reconstructed_demand"].dropna().tail(12)
+        if not tail.empty:
+            family_averages[fam] = int(round(max(0.0, float(tail.mean()))))
         else:
-            lifecycle_status = "Active"
+            family_averages[fam] = 10
 
-            # Check if series has historical orders
-            if (sku, reg) in observed_series:
-                point_forecast = selected_model.predict(sku, reg, d, h)
-                model_or_fallback = winning_model_name
+    forecast_records = forecast_keys_df.to_dict("records")
+    n_records = len(forecast_records)
+    forecast_rows: List[dict] = [None] * n_records  # type: ignore
 
-            # Cold start: check predecessor
-            elif replaces_sku and (replaces_sku, reg) in observed_series:
-                # Use predecessor demand history
-                point_forecast = selected_model.predict(replaces_sku, reg, d, h)
-                model_or_fallback = f"predecessor_{replaces_sku}_{winning_model_name}"
+    # Group record indices by date
+    records_by_date: Dict[str, List[int]] = {}
+    for idx, row in enumerate(forecast_records):
+        d = str(row["Date"]).strip()
+        records_by_date.setdefault(d, []).append(idx)
 
-            # Fallback to family average
+    for d, indices in records_by_date.items():
+        h = compute_horizon(d, cutoff_date)
+        f_year = int(d.split("-")[0])
+        price_multiplier = 1.0
+        if f_year == 2027:
+            price_multiplier = 1.02
+        elif f_year >= 2028:
+            price_multiplier = 1.02 * 1.02
+
+        batch_keys: List[Tuple[str, str]] = []
+        batch_indices: List[int] = []
+        batch_models: List[str] = []
+
+        for idx in indices:
+            row = forecast_records[idx]
+            sku = str(row["SKU_ID"]).strip()
+            reg = str(row["Region"]).strip()
+
+            meta = sku_meta.get(sku, {})
+            launch_date = str(meta.get("Launch_Date", "")).strip() if pd.notna(meta.get("Launch_Date")) else ""
+            eol_date = str(meta.get("EOL_Date", "")).strip() if pd.notna(meta.get("EOL_Date")) else ""
+            replaces_sku = str(meta.get("Replaces_SKU", "")).strip() if pd.notna(meta.get("Replaces_SKU")) else ""
+
+            base_price = base_price_by_sku.get(sku, last_prices.get(sku, 100.0))
+            unit_price = round(base_price * price_multiplier, 2)
+
+            # 1. Lifecycle Check: Post-EOL
+            if eol_date and d > eol_date:
+                forecast_rows[idx] = {
+                    "Date": d,
+                    "SKU_ID": sku,
+                    "Region": reg,
+                    "Product_Family": row.get("Product_Family", meta.get("Product_Family", "")),
+                    "Business_Unit": row.get("Business_Unit", meta.get("Business_Unit", "")),
+                    "SKU_Description": row.get("SKU_Description", meta.get("SKU_Description", "")),
+                    "Customer_Name": row.get("Customer_Name", ""),
+                    "Sales_Channel": row.get("Sales_Channel", ""),
+                    "horizon": h,
+                    "Units_Sold_Forecast": 0,
+                    "Unit_Price_USD": unit_price,
+                    "Projected_Revenue_USD": 0.0,
+                    "Model_Or_Fallback": "lifecycle_post_eol",
+                    "Lifecycle_Status": "Discontinued",
+                }
+            # 2. Lifecycle Check: Pre-Launch
+            elif launch_date and d < launch_date:
+                forecast_rows[idx] = {
+                    "Date": d,
+                    "SKU_ID": sku,
+                    "Region": reg,
+                    "Product_Family": row.get("Product_Family", meta.get("Product_Family", "")),
+                    "Business_Unit": row.get("Business_Unit", meta.get("Business_Unit", "")),
+                    "SKU_Description": row.get("SKU_Description", meta.get("SKU_Description", "")),
+                    "Customer_Name": row.get("Customer_Name", ""),
+                    "Sales_Channel": row.get("Sales_Channel", ""),
+                    "horizon": h,
+                    "Units_Sold_Forecast": 0,
+                    "Unit_Price_USD": unit_price,
+                    "Projected_Revenue_USD": 0.0,
+                    "Model_Or_Fallback": "lifecycle_pre_launch",
+                    "Lifecycle_Status": "Planned Launch",
+                }
+            # 3. Active Lifecycle
             else:
-                fam = meta.get("Product_Family", row.get("Product_Family", ""))
-                fam_history = as_of_history[as_of_history["Product_Family"] == fam]
-                tail = fam_history["reconstructed_demand"].dropna().tail(12)
-                point_forecast = int(round(max(0.0, float(tail.mean())))) if not tail.empty else 10
-                model_or_fallback = "family_peer_fallback"
+                if (sku, reg) in observed_series:
+                    batch_keys.append((sku, reg))
+                    batch_indices.append(idx)
+                    batch_models.append(winning_model_name)
+                elif replaces_sku and (replaces_sku, reg) in observed_series:
+                    batch_keys.append((replaces_sku, reg))
+                    batch_indices.append(idx)
+                    batch_models.append(f"predecessor_{replaces_sku}_{winning_model_name}")
+                else:
+                    fam = meta.get("Product_Family", row.get("Product_Family", ""))
+                    fb_units = family_averages.get(fam, 10)
+                    forecast_rows[idx] = {
+                        "Date": d,
+                        "SKU_ID": sku,
+                        "Region": reg,
+                        "Product_Family": row.get("Product_Family", meta.get("Product_Family", "")),
+                        "Business_Unit": row.get("Business_Unit", meta.get("Business_Unit", "")),
+                        "SKU_Description": row.get("SKU_Description", meta.get("SKU_Description", "")),
+                        "Customer_Name": row.get("Customer_Name", ""),
+                        "Sales_Channel": row.get("Sales_Channel", ""),
+                        "horizon": h,
+                        "Units_Sold_Forecast": fb_units,
+                        "Unit_Price_USD": unit_price,
+                        "Projected_Revenue_USD": round(fb_units * unit_price, 2),
+                        "Model_Or_Fallback": "family_peer_fallback",
+                        "Lifecycle_Status": "Active",
+                    }
 
-        # Clip non-negative integer
-        final_units = max(0, int(round(point_forecast)))
-
-        # Pricing
-        unit_price = project_sku_price(sku, d, last_prices, sku_master_df, events_df)
-        proj_revenue = round(final_units * unit_price, 2)
-
-        forecast_rows.append({
-            "Date": d,
-            "SKU_ID": sku,
-            "Region": reg,
-            "Product_Family": row.get("Product_Family", meta.get("Product_Family", "")),
-            "Business_Unit": row.get("Business_Unit", meta.get("Business_Unit", "")),
-            "SKU_Description": row.get("SKU_Description", meta.get("SKU_Description", "")),
-            "Customer_Name": row.get("Customer_Name", ""),
-            "Sales_Channel": row.get("Sales_Channel", ""),
-            "horizon": h,
-            "Units_Sold_Forecast": final_units,
-            "Unit_Price_USD": unit_price,
-            "Projected_Revenue_USD": proj_revenue,
-            "Model_Or_Fallback": model_or_fallback,
-            "Lifecycle_Status": lifecycle_status,
-        })
+        if batch_keys:
+            preds = selected_model.predict_batch(batch_keys, d, h)
+            for orig_idx, p_val, m_name in zip(batch_indices, preds, batch_models):
+                row = forecast_records[orig_idx]
+                sku = str(row["SKU_ID"]).strip()
+                reg = str(row["Region"]).strip()
+                meta = sku_meta.get(sku, {})
+                base_price = base_price_by_sku.get(sku, last_prices.get(sku, 100.0))
+                unit_price = round(base_price * price_multiplier, 2)
+                final_units = max(0, int(round(p_val)))
+                forecast_rows[orig_idx] = {
+                    "Date": d,
+                    "SKU_ID": sku,
+                    "Region": reg,
+                    "Product_Family": row.get("Product_Family", meta.get("Product_Family", "")),
+                    "Business_Unit": row.get("Business_Unit", meta.get("Business_Unit", "")),
+                    "SKU_Description": row.get("SKU_Description", meta.get("SKU_Description", "")),
+                    "Customer_Name": row.get("Customer_Name", ""),
+                    "Sales_Channel": row.get("Sales_Channel", ""),
+                    "horizon": h,
+                    "Units_Sold_Forecast": final_units,
+                    "Unit_Price_USD": unit_price,
+                    "Projected_Revenue_USD": round(final_units * unit_price, 2),
+                    "Model_Or_Fallback": m_name,
+                    "Lifecycle_Status": "Active",
+                }
 
     return pd.DataFrame(forecast_rows)
 

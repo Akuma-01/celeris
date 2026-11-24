@@ -1,0 +1,17 @@
+{
+  "current_run_id": "run_20261124_124852_ae251f",
+  "run_mode": "real",
+  "timestamp": "2026-11-24T12:48:52.720074+00:00",
+  "manifest": "artifacts/real_run/manifest.json",
+  "published_artifacts": {
+    "history": "artifacts/real_run/history.parquet",
+    "quality": "artifacts/real_run/quality.parquet",
+    "anomalies": "artifacts/real_run/anomalies.parquet",
+    "backtest": "artifacts/real_run/backtest.parquet",
+    "forecast": "artifacts/real_run/forecast.parquet",
+    "submission": "artifacts/real_run/submission.csv",
+    "macro_lead_lag": "artifacts/real_run/macro_lead_lag.parquet",
+    "stockouts": "artifacts/real_run/stockouts.parquet",
+    "sku_master": "artifacts/real_run/sku_master.parquet"
+  }
+}

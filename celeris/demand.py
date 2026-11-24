@@ -73,6 +73,9 @@ def reconstruct_demand_and_anomalies(
         .reset_index(drop=True)
     )
 
+    # Ensure series_keys has non-null SKU and Region
+    series_keys = series_keys[series_keys["SKU_ID"].notna() & (series_keys["SKU_ID"] != "") & series_keys["Region"].notna() & (series_keys["Region"] != "")].reset_index(drop=True)
+
     if series_keys.empty:
         # Return empty panel with full typed schema
         empty_cols = [
@@ -87,19 +90,13 @@ def reconstruct_demand_and_anomalies(
     dates = pd.date_range(f"{hist_min_date}-01", f"{hist_max_date}-01", freq="MS").strftime("%Y-%m").tolist()
 
     # 3. Build Cartesian product of (Date) x (Planning Series)
+    series_records = series_keys.to_dict("records")
     panel_rows: List[dict] = []
     for d in dates:
-        for _, s in series_keys.iterrows():
-            panel_rows.append({
-                "Date": d,
-                "SKU_ID": s["SKU_ID"],
-                "Region": s["Region"],
-                "Product_Family": s.get("Product_Family", ""),
-                "Business_Unit": s.get("Business_Unit", ""),
-                "SKU_Description": s.get("SKU_Description", ""),
-                "Customer_Name": s.get("Customer_Name", ""),
-                "Sales_Channel": s.get("Sales_Channel", ""),
-            })
+        for s in series_records:
+            row = s.copy()
+            row["Date"] = d
+            panel_rows.append(row)
 
     panel_df = pd.DataFrame(panel_rows)
 
@@ -139,13 +136,13 @@ def reconstruct_demand_and_anomalies(
     lifecycle_states: List[str] = []
 
     # Iterate by series to track pending backlog across months
-    for (sku_id, region), series_data in panel_df.groupby(["SKU_ID", "Region"], sort=False):
+    for (sku_id, region), series_data in panel_df.groupby(["SKU_ID", "Region"], sort=False, dropna=False):
         pending_carry = 0.0
         meta = sku_metadata.get(sku_id, {})
         launch_date = meta.get("Launch_Date", "")
         eol_date = meta.get("EOL_Date", "")
 
-        for idx, row in series_data.iterrows():
+        for row in series_data.to_dict("records"):
             d = row["Date"]
             pkey = f"{d}|{sku_id}|{region}"
             is_obs = row["is_observed"]

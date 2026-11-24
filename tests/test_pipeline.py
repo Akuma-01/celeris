@@ -6,13 +6,21 @@ from celeris.pipeline import PipelineRunner
 from celeris.manifest import RunManifest
 
 
-def test_pipeline_run_on_student_data_halts_with_missing_history(
-    student_data_dir: Path, tmp_path: Path
+def test_pipeline_run_on_missing_history_halts_safely(
+    fixture_data_dir: Path, tmp_path: Path
 ):
-    """Running pipeline on student_data halts before fitting/publishing and writes blocked manifest."""
+    """Running pipeline on data with missing history halts before fitting/publishing and writes blocked manifest."""
+    # Create directory missing history
+    no_hist_dir = tmp_path / "no_history_data"
+    no_hist_dir.mkdir(parents=True)
+    import shutil
+    for f in fixture_data_dir.glob("*.csv"):
+        if f.name != "history.csv":
+            shutil.copy2(f, no_hist_dir / f.name)
+
     runner = PipelineRunner(
-        data_dir=student_data_dir,
-        out_dir=tmp_path / "run_student",
+        data_dir=no_hist_dir,
+        out_dir=tmp_path / "run_no_history",
         is_fixture=False,
     )
     result = runner.run()
@@ -22,12 +30,25 @@ def test_pipeline_run_on_student_data_halts_with_missing_history(
     assert "Historical ERP sales extract is MISSING" in result.message
 
     # Verify manifest written
-    manifest_file = tmp_path / "run_student" / "manifest.json"
+    manifest_file = tmp_path / "run_no_history" / "manifest.json"
     assert manifest_file.exists()
     manifest = RunManifest.load(manifest_file)
     assert manifest.status == "BLOCKED_MISSING_HISTORY"
     assert manifest.is_fixture is False
     assert "history" in manifest.diagnostics_summary["missing_roles"]
+
+
+def test_student_data_is_diagnosed_ready(student_data_dir: Path, tmp_path: Path):
+    """Running diagnostics on student_data verifies all 7 roles are present and ready."""
+    runner = PipelineRunner(
+        data_dir=student_data_dir,
+        out_dir=tmp_path / "diag_student",
+        is_fixture=False,
+    )
+    report = runner.diagnose()
+    assert report.is_ready is True
+    assert len(report.missing_roles) == 0
+    assert len(report.files_scanned) == 7
 
 
 def test_pipeline_run_on_fixture_succeeds(

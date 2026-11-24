@@ -47,6 +47,7 @@ def analyze_macro_lead_lag(
     # Ensure Date format
     m_df = macro_df.copy()
     m_df["Date"] = m_df["Date"].astype(str).str.strip()
+    m_df = m_df.drop_duplicates(subset=["Date"], keep="first")
     m_df = m_df.sort_values(by="Date").reset_index(drop=True)
 
     available_indicators = [c for c in INDICATOR_COLS if c in m_df.columns]

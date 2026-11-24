@@ -74,61 +74,93 @@ def extract_origin_features(
 
     Guarantees no data after origin_date is accessed.
     """
-    # Strict cutoff: only history strictly on or before origin_date
-    as_of_df = history_df[history_df["Date"] <= origin_date].copy()
-    features: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    as_of_df = history_df[history_df["Date"] <= origin_date].sort_values(by=["SKU_ID", "Region", "Date"]).reset_index(drop=True)
+    if as_of_df.empty:
+        return {}
 
     sku_meta: Dict[str, dict] = {}
     if sku_master_df is not None and not sku_master_df.empty:
-        for _, r in sku_master_df.iterrows():
-            sku_meta[str(r["SKU_ID"])] = r.to_dict()
+        sku_meta = {str(r["SKU_ID"]): r for r in sku_master_df.to_dict("records")}
 
-    for (sku_id, region), group in as_of_df.groupby(["SKU_ID", "Region"], sort=False):
-        group = group.sort_values(by="Date").reset_index(drop=True)
-        demands = group["reconstructed_demand"]
+    sku_arr = as_of_df["SKU_ID"].astype(str).to_numpy()
+    reg_arr = as_of_df["Region"].astype(str).to_numpy()
+    fam_arr = as_of_df["Product_Family"].astype(str).to_numpy() if "Product_Family" in as_of_df.columns else None
+    bu_arr = as_of_df["Business_Unit"].astype(str).to_numpy() if "Business_Unit" in as_of_df.columns else None
+    demand_arr = as_of_df["reconstructed_demand"].to_numpy(dtype=np.float64)
+    price_arr = as_of_df["Unit_Price_USD"].to_numpy(dtype=np.float64) if "Unit_Price_USD" in as_of_df.columns else None
 
-        # Intermittency class
-        iclass, adi, cv2, elig_obs, num_pos = compute_intermittency_class(demands)
+    change_mask = (sku_arr[1:] != sku_arr[:-1]) | (reg_arr[1:] != reg_arr[:-1])
+    split_indices = np.where(change_mask)[0] + 1
+    start_indices = np.concatenate(([0], split_indices))
+    end_indices = np.concatenate((split_indices, [len(sku_arr)]))
 
-        # Lags as of origin
-        # The last row is origin_date (or the latest observed month <= origin_date)
-        n = len(group)
-        val_0 = float(demands.iloc[-1]) if n >= 1 and pd.notna(demands.iloc[-1]) else 0.0
-        val_1 = float(demands.iloc[-2]) if n >= 2 and pd.notna(demands.iloc[-2]) else val_0
-        val_2 = float(demands.iloc[-3]) if n >= 3 and pd.notna(demands.iloc[-3]) else val_1
-        val_5 = float(demands.iloc[-6]) if n >= 6 and pd.notna(demands.iloc[-6]) else val_2
-        val_11 = float(demands.iloc[-12]) if n >= 12 and pd.notna(demands.iloc[-12]) else val_5
-
-        # Trailing windows (3, 6, 12)
-        tail_3 = demands.iloc[-3:].dropna()
-        tail_6 = demands.iloc[-6:].dropna()
-        tail_12 = demands.iloc[-12:].dropna()
-
-        mean_3 = float(tail_3.mean()) if len(tail_3) > 0 else 0.0
-        mean_6 = float(tail_6.mean()) if len(tail_6) > 0 else 0.0
-        std_6 = float(tail_6.std(ddof=0)) if len(tail_6) > 1 else 0.0
-        mean_12 = float(tail_12.mean()) if len(tail_12) > 0 else 0.0
-
-        # Zero share in trailing 12 months
-        zero_share_12 = float((tail_12 == 0).sum() / len(tail_12)) if len(tail_12) > 0 else 0.0
-
-        # Time since last positive order
-        pos_indices = group.index[group["reconstructed_demand"] > 0].tolist()
-        time_since_last_order = (n - 1 - pos_indices[-1]) if pos_indices else n
-
-        # Dimensions
-        first_row = group.iloc[0]
+    features: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    for start, end in zip(start_indices, end_indices):
+        sku_id = sku_arr[start]
+        region = reg_arr[start]
         meta = sku_meta.get(sku_id, {})
+        fam = fam_arr[start] if (fam_arr is not None and fam_arr[start] != "" and fam_arr[start] != "nan") else meta.get("Product_Family", "")
+        bu = bu_arr[start] if (bu_arr is not None and bu_arr[start] != "" and bu_arr[start] != "nan") else meta.get("Business_Unit", "")
+
+        demands = demand_arr[start:end]
+        valid_demands = demands[~np.isnan(demands)]
+        elig_obs = len(valid_demands)
+        positives = valid_demands[valid_demands > 0]
+        num_pos = len(positives)
+
+        if num_pos < 2:
+            iclass, adi, cv2 = "insufficient_history", None, None
+        else:
+            adi = float(elig_obs / num_pos)
+            pos_mean = float(np.mean(positives))
+            pos_var = float(np.var(positives, ddof=0))
+            cv2 = float(pos_var / (pos_mean ** 2)) if pos_mean > 0 else 0.0
+            is_high_adi = adi >= 1.32
+            is_high_cv2 = cv2 >= 0.49
+            if not is_high_adi and not is_high_cv2:
+                iclass = "smooth"
+            elif is_high_adi and not is_high_cv2:
+                iclass = "intermittent"
+            elif not is_high_adi and is_high_cv2:
+                iclass = "erratic"
+            else:
+                iclass = "lumpy"
+
+        n = len(demands)
+        val_0 = demands[-1] if n >= 1 and not np.isnan(demands[-1]) else 0.0
+        val_1 = demands[-2] if n >= 2 and not np.isnan(demands[-2]) else val_0
+        val_2 = demands[-3] if n >= 3 and not np.isnan(demands[-3]) else val_1
+        val_5 = demands[-6] if n >= 6 and not np.isnan(demands[-6]) else val_2
+        val_11 = demands[-12] if n >= 12 and not np.isnan(demands[-12]) else val_5
+
+        d3 = demands[max(0, n - 3):]
+        v3 = d3[~np.isnan(d3)]
+        mean_3 = float(np.mean(v3)) if len(v3) > 0 else 0.0
+
+        d6 = demands[max(0, n - 6):]
+        v6 = d6[~np.isnan(d6)]
+        mean_6 = float(np.mean(v6)) if len(v6) > 0 else 0.0
+        std_6 = float(np.std(v6, ddof=0)) if len(v6) > 1 else 0.0
+
+        d12 = demands[max(0, n - 12):]
+        v12 = d12[~np.isnan(d12)]
+        mean_12 = float(np.mean(v12)) if len(v12) > 0 else 0.0
+        zero_share_12 = float(np.sum(v12 == 0) / len(v12)) if len(v12) > 0 else 0.0
+
+        pos_rel = np.where(demands > 0)[0]
+        time_since_last_order = int(n - 1 - pos_rel[-1]) if len(pos_rel) > 0 else n
+
+        last_price = float(price_arr[start]) if price_arr is not None and not np.isnan(price_arr[start]) else 0.0
 
         features[(sku_id, region)] = {
             "SKU_ID": sku_id,
             "Region": region,
-            "Product_Family": first_row.get("Product_Family", meta.get("Product_Family", "")),
-            "Business_Unit": first_row.get("Business_Unit", meta.get("Business_Unit", "")),
+            "Product_Family": fam,
+            "Business_Unit": bu,
             "origin_date": origin_date,
             "intermittency_class": iclass,
-            "adi": adi if adi is not None else 1.0,
-            "cv2": cv2 if cv2 is not None else 0.0,
+            "adi": round(adi, 4) if adi is not None else 1.0,
+            "cv2": round(cv2, 4) if cv2 is not None else 0.0,
             "eligible_months": elig_obs,
             "positive_months": num_pos,
             "lag_1": val_0,
@@ -142,7 +174,7 @@ def extract_origin_features(
             "trailing_mean_12": mean_12,
             "zero_share_12": zero_share_12,
             "time_since_last_order": time_since_last_order,
-            "last_price": float(first_row.get("Unit_Price_USD", 0.0)) if pd.notna(first_row.get("Unit_Price_USD")) else 0.0,
+            "last_price": last_price,
         }
 
     return features

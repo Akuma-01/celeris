@@ -12,6 +12,7 @@ from celeris.forecast import (
     TrailingMeanModel,
     PooledDirectModel,
     IntermittentChallengerModel,
+    EnsembleModel,
 )
 
 
@@ -93,7 +94,8 @@ def run_fold_backtest(
     snaive = SeasonalNaiveModel().fit(as_of_history, origin_date)
     tmean = TrailingMeanModel().fit(as_of_history, origin_date)
     pooled = PooledDirectModel().fit(as_of_history, origin_date)
-    intermittent = IntermittentChallengerModel().fit(as_of_history, origin_date)
+    intermittent = IntermittentChallengerModel().fit(as_of_history, origin_date, pooled_model=pooled)
+    ensemble = EnsembleModel().fit(as_of_history, origin_date, snaive=snaive, pooled=pooled, tmean=tmean)
 
     # Evaluation targets in the 19-month window
     target_mask = (history_df["Date"] >= fold.target_start_date) & (history_df["Date"] <= fold.target_end_date)
@@ -109,16 +111,27 @@ def run_fold_backtest(
         "trailing_mean": tmean,
         "pooled_direct": pooled,
         "intermittent_challenger": intermittent,
+        "ensemble": ensemble,
     }
 
     # Actual target map: (Date, SKU, Region) -> (actual_demand, demand_evidence)
-    actual_map = {
-        (r["Date"], r["SKU_ID"], r["Region"]): (r["reconstructed_demand"], r["demand_evidence"])
-        for _, r in eval_df.iterrows()
-    }
+    actual_map = dict(zip(
+        zip(eval_df["Date"], eval_df["SKU_ID"], eval_df["Region"]),
+        zip(eval_df["reconstructed_demand"], eval_df["demand_evidence"])
+    ))
+
+    series_records = series_keys.to_dict("records")
+    series_keys_list = [(s["SKU_ID"], s["Region"]) for s in series_records]
 
     for h_idx, t_date in enumerate(target_dates, start=1):
-        for _, s in series_keys.iterrows():
+        # Predict all series simultaneously in batch
+        f_snaive_all = snaive.predict_batch(series_keys_list, t_date, h_idx)
+        f_tmean_all = tmean.predict_batch(series_keys_list, t_date, h_idx)
+        f_pooled_all = pooled.predict_batch(series_keys_list, t_date, h_idx)
+        f_intermittent_all = intermittent.predict_batch(series_keys_list, t_date, h_idx)
+        f_ensemble_all = ensemble.predict_batch(series_keys_list, t_date, h_idx)
+
+        for i, s in enumerate(series_records):
             sku = s["SKU_ID"]
             reg = s["Region"]
             fam = s["Product_Family"]
@@ -126,20 +139,12 @@ def run_fold_backtest(
 
             actual_val, ev = actual_map.get((t_date, sku, reg), (None, "unobserved"))
 
-            # Seasonal naive
-            f_snaive = snaive.predict(sku, reg, t_date)
-            # Trailing mean
-            f_tmean = tmean.predict(sku, reg, t_date)
-            # Pooled
-            f_pooled = pooled.predict(sku, reg, t_date, h_idx)
-            # Intermittent challenger
-            f_intermittent = intermittent.predict(sku, reg, t_date, h_idx)
-
             preds = {
-                "seasonal_naive": f_snaive,
-                "trailing_mean": f_tmean,
-                "pooled_direct": f_pooled,
-                "intermittent_challenger": f_intermittent,
+                "seasonal_naive": f_snaive_all[i],
+                "trailing_mean": f_tmean_all[i],
+                "pooled_direct": f_pooled_all[i],
+                "intermittent_challenger": f_intermittent_all[i],
+                "ensemble": f_ensemble_all[i],
             }
 
             for c_name, pred_val in preds.items():

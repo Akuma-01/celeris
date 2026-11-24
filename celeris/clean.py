@@ -73,16 +73,16 @@ def clean_history_transactions(
     derived_year = parsed_date.dt.year
     derived_month = parsed_date.dt.month
 
-    for idx in df[valid_date_mask].index:
-        rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
-        normalized_d = cleaned_date_str.loc[idx]
-        pkey = f"{normalized_d}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{df.loc[idx, 'Region'] if 'Region' in df.columns else ''}"
-        curr_year = df.loc[idx, "Year"] if "Year" in df.columns else None
-        curr_month = df.loc[idx, "Month"] if "Month" in df.columns else None
-        d_year = int(derived_year.loc[idx])
-        d_month = int(derived_month.loc[idx])
-
-        if pd.notna(curr_year) and int(curr_year) != d_year:
+    # Vectorized conflict detection for Year and Month
+    if "Year" in df.columns:
+        year_num = pd.to_numeric(df["Year"], errors="coerce")
+        year_diff_mask = valid_date_mask & year_num.notna() & (year_num != derived_year)
+        for idx in df[year_diff_mask].index:
+            rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+            normalized_d = cleaned_date_str.loc[idx]
+            pkey = f"{normalized_d}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{df.loc[idx, 'Region'] if 'Region' in df.columns else ''}"
+            curr_year = df.loc[idx, "Year"]
+            d_year = int(derived_year.loc[idx])
             quality_records.append(QualityRecord(
                 file_name=file_name,
                 source_row_id=rec_id,
@@ -96,7 +96,15 @@ def clean_history_transactions(
                 linked_evidence=f"Date={normalized_d}",
             ))
 
-        if pd.notna(curr_month) and int(curr_month) != d_month:
+    if "Month" in df.columns:
+        month_num = pd.to_numeric(df["Month"], errors="coerce")
+        month_diff_mask = valid_date_mask & month_num.notna() & (month_num != derived_month)
+        for idx in df[month_diff_mask].index:
+            rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+            normalized_d = cleaned_date_str.loc[idx]
+            pkey = f"{normalized_d}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{df.loc[idx, 'Region'] if 'Region' in df.columns else ''}"
+            curr_month = df.loc[idx, "Month"]
+            d_month = int(derived_month.loc[idx])
             quality_records.append(QualityRecord(
                 file_name=file_name,
                 source_row_id=rec_id,
@@ -115,30 +123,108 @@ def clean_history_transactions(
     df["Month"] = derived_month.astype("Int64")
 
     # 3. Label normalization
+    REGION_MAPPING = {
+        "india": "India",
+        "eu": "Europe",
+        "europe": "Europe",
+        "north america": "North America",
+        "n. america": "North America",
+        "asia pacific": "Asia Pacific",
+        "asia-pacific": "Asia Pacific",
+        "apac": "Asia Pacific",
+        "latin america": "Latin America",
+        "latin-america": "Latin America",
+        "latam": "Latin America",
+        "middle east & africa": "Middle East & Africa",
+        "middle east and africa": "Middle East & Africa",
+        "me&a": "Middle East & Africa",
+        "mea": "Middle East & Africa",
+    }
+
+    CHANNEL_MAPPING = {
+        "direct oem": "Direct OEM",
+        "direct-oem": "Direct OEM",
+        "oem direct": "Direct OEM",
+        "tier-1 distributor": "Tier-1 Distributor",
+        "tier 1 distributor": "Tier-1 Distributor",
+        "t1 distributor": "Tier-1 Distributor",
+        "aftermarket": "Aftermarket",
+        "after-market": "Aftermarket",
+        "export": "Export",
+    }
+
+    # Normalize Region variants
+    if "Region" in df.columns:
+        raw_reg = df["Region"].astype(str).str.strip()
+        mapped_reg = raw_reg.str.lower().map(REGION_MAPPING)
+
+        # Log region standardizations
+        std_mask = mapped_reg.notna() & (df["Region"] != mapped_reg)
+        for idx in df[std_mask].head(100).index:  # sample log to prevent millions of records
+            rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+            pkey = f"{df.loc[idx, 'Date']}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{mapped_reg.loc[idx]}"
+            quality_records.append(QualityRecord(
+                file_name=file_name,
+                source_row_id=rec_id,
+                planning_key=pkey,
+                field="Region",
+                rule="region_label_standardization",
+                original_value=str(df.loc[idx, "Region"]),
+                cleaned_value=str(mapped_reg.loc[idx]),
+                decision="standardized_to_canonical_region",
+                reason=f"Standardized regional variant '{df.loc[idx, 'Region']}' to '{mapped_reg.loc[idx]}'",
+                linked_evidence=f"Original={df.loc[idx, 'Region']}",
+            ))
+
+        # Quarantine unresolvable/NaN regions
+        null_reg_mask = df["Region"].isna() | mapped_reg.isna()
+        if null_reg_mask.any():
+            for idx in df[null_reg_mask].head(50).index:
+                rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+                quality_records.append(QualityRecord(
+                    file_name=file_name,
+                    source_row_id=rec_id,
+                    planning_key=f"{df.loc[idx, 'Date']}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|UNKNOWN",
+                    field="Region",
+                    rule="quarantine_unresolvable_region",
+                    original_value=str(df.loc[idx, "Region"]),
+                    cleaned_value="QUARANTINED",
+                    decision="quarantined_from_planning_panel",
+                    reason="Transaction missing identifiable sales region; quarantined per rule 1",
+                    linked_evidence=f"Units_Sold={df.loc[idx, 'Units_Sold'] if 'Units_Sold' in df.columns else ''}",
+                ))
+            # Keep only rows with valid mapped regions
+            df = df[~null_reg_mask].copy()
+            mapped_reg = mapped_reg[~null_reg_mask]
+
+        df["Region"] = mapped_reg
+
+    # Normalize Sales_Channel variants
+    if "Sales_Channel" in df.columns:
+        raw_chan = df["Sales_Channel"].astype(str).str.strip()
+        mapped_chan = raw_chan.str.lower().map(CHANNEL_MAPPING)
+        valid_chan_mask = mapped_chan.notna()
+        df.loc[valid_chan_mask, "Sales_Channel"] = mapped_chan[valid_chan_mask]
+
+    # Impute missing Product_Family / Business_Unit from SKU Master
+    if sku_master_df is not None and not sku_master_df.empty and "SKU_ID" in df.columns:
+        if "Product_Family" in sku_master_df.columns:
+            fam_map = dict(zip(sku_master_df["SKU_ID"].astype(str).str.strip(), sku_master_df["Product_Family"]))
+            fam_na_mask = df["Product_Family"].isna() | (df["Product_Family"] == "") | (df["Product_Family"] == "nan")
+            df.loc[fam_na_mask, "Product_Family"] = df.loc[fam_na_mask, "SKU_ID"].map(fam_map)
+        if "Business_Unit" in sku_master_df.columns:
+            bu_map = dict(zip(sku_master_df["SKU_ID"].astype(str).str.strip(), sku_master_df["Business_Unit"]))
+            bu_na_mask = df["Business_Unit"].isna() | (df["Business_Unit"] == "") | (df["Business_Unit"] == "nan")
+            df.loc[bu_na_mask, "Business_Unit"] = df.loc[bu_na_mask, "SKU_ID"].map(bu_map)
+
+    # General whitespace stripping
     str_cols = [
         "Product_Family", "Business_Unit", "SKU_ID", "SKU_Description",
         "Customer_Name", "Sales_Channel", "Region"
     ]
     for col in str_cols:
         if col in df.columns:
-            cleaned_col = df[col].astype(str).str.strip()
-            diff_mask = (df[col].astype(str) != cleaned_col) & df[col].notna()
-            for idx in df[diff_mask].index:
-                rec_id = str(df.loc[idx, "Record_ID"])
-                pkey = f"{df.loc[idx, 'Date']}|{df.loc[idx, 'SKU_ID']}|{df.loc[idx, 'Region']}"
-                quality_records.append(QualityRecord(
-                    file_name=file_name,
-                    source_row_id=rec_id,
-                    planning_key=pkey,
-                    field=col,
-                    rule="label_whitespace_normalization",
-                    original_value=str(df.loc[idx, col]),
-                    cleaned_value=str(cleaned_col.loc[idx]),
-                    decision="whitespace_stripped",
-                    reason=f"Leading/trailing whitespace stripped from {col}",
-                    linked_evidence=f"Record_ID={rec_id}",
-                ))
-            df[col] = cleaned_col
+            df[col] = df[col].astype(str).str.strip()
 
     # 4. Latest-load Deduplication on Record_ID
     if "Record_ID" in df.columns and "Load_Timestamp" in df.columns:
