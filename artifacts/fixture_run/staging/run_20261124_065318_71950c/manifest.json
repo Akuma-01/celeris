@@ -1,0 +1,374 @@
+{
+  "run_id": "run_20261124_065318_71950c",
+  "run_timestamp": "2026-11-24T06:53:18.548201+00:00",
+  "run_mode": "fixture",
+  "is_fixture": true,
+  "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
+  "out_dir": "/home/akuma/projects/hackathon/celeris/artifacts/fixture_run",
+  "status": "SUCCESS",
+  "blocker": null,
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "pandas": "3.1.1",
+    "pyarrow": "26.0.1",
+    "streamlit": "1.67.0",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0"
+  },
+  "resolved_roles": {
+    "history": [
+      "history.csv"
+    ],
+    "forecast_rows": [
+      "forecast_rows.csv"
+    ],
+    "sku_master": [
+      "sku_master.csv"
+    ],
+    "sample_submission": [
+      "sample_submission.csv"
+    ],
+    "macro_indicators": [
+      "macro_indicators.csv"
+    ],
+    "stockouts": [
+      "inventory_stockouts.csv"
+    ],
+    "events_calendar": [
+      "events_calendar.csv"
+    ]
+  },
+  "file_hashes": {
+    "events_calendar.csv": "7711930daa3c8db2f0603dd796f485b6c67b70843f46c31c5e5fea76abb58689",
+    "forecast_rows.csv": "7c510e72cc48aa269ab8714dc5ee3f22a30c74a239363b7eb63cfff0526f2f59",
+    "history.csv": "578a09fe17b4fdd02f75612d173d247fa559ff087c8a920f1543c6bc4b25dab7",
+    "inventory_stockouts.csv": "a9ff1744d2e92a779d655bd5e411bbbfaeaac3b39fea1ea0a5636f28a80283da",
+    "macro_indicators.csv": "9c58f8def0a5caa660490eac4a21fd9c4af47095374685d477dff13a5ba05479",
+    "sample_submission.csv": "5c27248c72731e5a254c46d64903284c73d08766c5297ef1b54b2cd71817e80a",
+    "sku_master.csv": "c831f66c1efb3cf8eb3e5b2d9583a80f330b3773345823afcf901bf6a3c75878"
+  },
+  "diagnostics_summary": {
+    "missing_roles": [],
+    "scanned_file_count": 7,
+    "summary_notes": [
+      "Forecast rows resolved in forecast_rows.csv: 76 rows covering 2026-11 to 2028-05 (19 months).",
+      "All seven dataset roles successfully resolved."
+    ],
+    "raw_history_rows": 282,
+    "cleaned_history_rows": 281,
+    "panel_history_rows": 376,
+    "observed_rows": 281,
+    "unobserved_missing_rows": 95,
+    "quality_issues_logged": 1,
+    "anomalies_logged": 134,
+    "total_reconstructed_demand": 21052.0,
+    "backtest_rows": 912,
+    "leakage_check_passed": true,
+    "selected_winning_model": "pooled_direct",
+    "development_metrics": {
+      "seasonal_naive": {
+        "wape": 0.1085,
+        "signed_bias": -0.1028,
+        "total_actual": 8785.0,
+        "total_forecast": 7882.0,
+        "rows": 114
+      },
+      "trailing_mean": {
+        "wape": 0.1871,
+        "signed_bias": -0.0667,
+        "total_actual": 8785.0,
+        "total_forecast": 8199.0,
+        "rows": 114
+      },
+      "pooled_direct": {
+        "wape": 0.0983,
+        "signed_bias": -0.0927,
+        "total_actual": 8785.0,
+        "total_forecast": 7971.0,
+        "rows": 114
+      },
+      "intermittent_challenger": {
+        "wape": 0.1931,
+        "signed_bias": -0.0947,
+        "total_actual": 8785.0,
+        "total_forecast": 7953.0,
+        "rows": 114
+      }
+    },
+    "frozen_holdout_metrics": {
+      "seasonal_naive": {
+        "wape": 0.0916,
+        "signed_bias": -0.0916,
+        "total_actual": 5349.0,
+        "total_forecast": 4859.0,
+        "rows": 57
+      },
+      "trailing_mean": {
+        "wape": 0.092,
+        "signed_bias": -0.0729,
+        "total_actual": 5349.0,
+        "total_forecast": 4959.0,
+        "rows": 57
+      },
+      "pooled_direct": {
+        "wape": 0.0806,
+        "signed_bias": -0.0458,
+        "total_actual": 5349.0,
+        "total_forecast": 5104.0,
+        "rows": 57
+      },
+      "intermittent_challenger": {
+        "wape": 0.0806,
+        "signed_bias": -0.0458,
+        "total_actual": 5349.0,
+        "total_forecast": 5104.0,
+        "rows": 57
+      }
+    },
+    "submission_rows": 76,
+    "submission_total_units": 5480,
+    "submission_projected_revenue": 1523749.5,
+    "submission_validation_passed": true,
+    "macro_leading_indicators": {
+      "Brake & Safety Systems": {
+        "best_indicator": "Raw_Material_Cost_Index",
+        "best_lag": 3,
+        "correlation": 0.4946
+      },
+      "Hydraulic Systems": {
+        "best_indicator": "ISM_Manufacturing_PMI",
+        "best_lag": 5,
+        "correlation": 0.79
+      },
+      "Powertrain Components": {
+        "best_indicator": "Raw_Material_Cost_Index",
+        "best_lag": 1,
+        "correlation": 0.9731
+      }
+    }
+  },
+  "metadata": {
+    "stage": "advanced_demand_planning_control_tower",
+    "tier": "Advanced",
+    "published_artifacts": {
+      "history": "artifacts/fixture_run/history.parquet",
+      "quality": "artifacts/fixture_run/quality.parquet",
+      "anomalies": "artifacts/fixture_run/anomalies.parquet",
+      "backtest": "artifacts/fixture_run/backtest.parquet",
+      "forecast": "artifacts/fixture_run/forecast.parquet",
+      "submission": "artifacts/fixture_run/submission.csv",
+      "macro_lead_lag": "artifacts/fixture_run/macro_lead_lag.parquet",
+      "stockouts": "artifacts/fixture_run/stockouts.parquet",
+      "sku_master": "artifacts/fixture_run/sku_master.parquet"
+    },
+    "backtest_summary": {
+      "development_metrics": {
+        "seasonal_naive": {
+          "wape": 0.1085,
+          "signed_bias": -0.1028,
+          "total_actual": 8785.0,
+          "total_forecast": 7882.0,
+          "rows": 114
+        },
+        "trailing_mean": {
+          "wape": 0.1871,
+          "signed_bias": -0.0667,
+          "total_actual": 8785.0,
+          "total_forecast": 8199.0,
+          "rows": 114
+        },
+        "pooled_direct": {
+          "wape": 0.0983,
+          "signed_bias": -0.0927,
+          "total_actual": 8785.0,
+          "total_forecast": 7971.0,
+          "rows": 114
+        },
+        "intermittent_challenger": {
+          "wape": 0.1931,
+          "signed_bias": -0.0947,
+          "total_actual": 8785.0,
+          "total_forecast": 7953.0,
+          "rows": 114
+        }
+      },
+      "selected_winner": "pooled_direct",
+      "frozen_holdout_metrics": {
+        "seasonal_naive": {
+          "wape": 0.0916,
+          "signed_bias": -0.0916,
+          "total_actual": 5349.0,
+          "total_forecast": 4859.0,
+          "rows": 57
+        },
+        "trailing_mean": {
+          "wape": 0.092,
+          "signed_bias": -0.0729,
+          "total_actual": 5349.0,
+          "total_forecast": 4959.0,
+          "rows": 57
+        },
+        "pooled_direct": {
+          "wape": 0.0806,
+          "signed_bias": -0.0458,
+          "total_actual": 5349.0,
+          "total_forecast": 5104.0,
+          "rows": 57
+        },
+        "intermittent_challenger": {
+          "wape": 0.0806,
+          "signed_bias": -0.0458,
+          "total_actual": 5349.0,
+          "total_forecast": 5104.0,
+          "rows": 57
+        }
+      },
+      "per_fold_metrics": {
+        "Fold_1": {
+          "seasonal_naive": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1204,
+            "signed_bias": -0.1204,
+            "total_actual": 4178.0,
+            "total_forecast": 3675.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1999,
+            "signed_bias": -0.0677,
+            "total_actual": 4178.0,
+            "total_forecast": 3895.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.1146,
+            "signed_bias": -0.1075,
+            "total_actual": 4178.0,
+            "total_forecast": 3729.0,
+            "scored_rows": 57
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.2169,
+            "signed_bias": -0.102,
+            "total_actual": 4178.0,
+            "total_forecast": 3752.0,
+            "scored_rows": 57
+          }
+        },
+        "Fold_2": {
+          "seasonal_naive": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.0977,
+            "signed_bias": -0.0868,
+            "total_actual": 4607.0,
+            "total_forecast": 4207.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.1756,
+            "signed_bias": -0.0658,
+            "total_actual": 4607.0,
+            "total_forecast": 4304.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.0836,
+            "signed_bias": -0.0792,
+            "total_actual": 4607.0,
+            "total_forecast": 4242.0,
+            "scored_rows": 57
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.1715,
+            "signed_bias": -0.0881,
+            "total_actual": 4607.0,
+            "total_forecast": 4201.0,
+            "scored_rows": 57
+          }
+        },
+        "Fold_3_Frozen_Holdout": {
+          "seasonal_naive": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0916,
+            "signed_bias": -0.0916,
+            "total_actual": 5349.0,
+            "total_forecast": 4859.0,
+            "scored_rows": 57
+          },
+          "trailing_mean": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.092,
+            "signed_bias": -0.0729,
+            "total_actual": 5349.0,
+            "total_forecast": 4959.0,
+            "scored_rows": 57
+          },
+          "pooled_direct": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0806,
+            "signed_bias": -0.0458,
+            "total_actual": 5349.0,
+            "total_forecast": 5104.0,
+            "scored_rows": 57
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0806,
+            "signed_bias": -0.0458,
+            "total_actual": 5349.0,
+            "total_forecast": 5104.0,
+            "scored_rows": 57
+          }
+        }
+      }
+    },
+    "submission_validation": {
+      "is_valid": true,
+      "total_rows": 76,
+      "columns": [
+        "Date",
+        "SKU_ID",
+        "Region",
+        "Units_Sold_Forecast"
+      ],
+      "notes": [
+        "Column order matches exactly: Date, SKU_ID, Region, Units_Sold_Forecast",
+        "Row count verified: 76 rows",
+        "Key sequence and multiplicity match test file identically.",
+        "No nulls or blank values found.",
+        "100% value agreement between submission.csv and forecast.parquet."
+      ]
+    }
+  }
+}

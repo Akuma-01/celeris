@@ -159,19 +159,13 @@ def generate_final_forecast(
 
             # Check if series has historical orders
             if (sku, reg) in observed_series:
-                if winning_model_name in ["pooled_direct", "intermittent_challenger"]:
-                    point_forecast = selected_model.predict(sku, reg, d, h)
-                else:
-                    point_forecast = selected_model.predict(sku, reg, d)
+                point_forecast = selected_model.predict(sku, reg, d, h)
                 model_or_fallback = winning_model_name
 
             # Cold start: check predecessor
             elif replaces_sku and (replaces_sku, reg) in observed_series:
                 # Use predecessor demand history
-                if winning_model_name in ["pooled_direct", "intermittent_challenger"]:
-                    point_forecast = selected_model.predict(replaces_sku, reg, d, h)
-                else:
-                    point_forecast = selected_model.predict(replaces_sku, reg, d)
+                point_forecast = selected_model.predict(replaces_sku, reg, d, h)
                 model_or_fallback = f"predecessor_{replaces_sku}_{winning_model_name}"
 
             # Fallback to family average

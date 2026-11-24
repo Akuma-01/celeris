@@ -62,11 +62,26 @@ def reconstruct_demand_and_anomalies(
             }
 
     # Distinct series observed in history
+    required_series_cols = ["SKU_ID", "Region", "Product_Family", "Business_Unit", "SKU_Description", "Customer_Name", "Sales_Channel"]
+    for c in required_series_cols:
+        if c not in cleaned_df.columns:
+            cleaned_df[c] = ""
+
     series_keys = (
-        cleaned_df[["SKU_ID", "Region", "Product_Family", "Business_Unit", "SKU_Description", "Customer_Name", "Sales_Channel"]]
+        cleaned_df[required_series_cols]
         .drop_duplicates(subset=["SKU_ID", "Region"])
         .reset_index(drop=True)
     )
+
+    if series_keys.empty:
+        # Return empty panel with full typed schema
+        empty_cols = [
+            "Date", "Year", "Month", "SKU_ID", "Region", "Product_Family", "Business_Unit",
+            "SKU_Description", "Customer_Name", "Sales_Channel", "is_observed",
+            "Units_Sold", "reconstructed_demand", "demand_evidence", "Unit_Price_USD",
+            "Revenue_USD", "Lifecycle_Status"
+        ]
+        return pd.DataFrame(columns=empty_cols), []
 
     # 2. Complete date range
     dates = pd.date_range(f"{hist_min_date}-01", f"{hist_max_date}-01", freq="MS").strftime("%Y-%m").tolist()

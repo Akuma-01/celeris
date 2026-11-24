@@ -27,9 +27,9 @@ class SeasonalNaiveModel:
             self.history_by_series[(sku, region)] = g.sort_values(by="Date").copy()
         return self
 
-    def predict(self, sku_id: str, region: str, target_date: str) -> int:
+    def predict(self, sku_id: str, region: str, target_date: str, horizon: int = 1) -> int:
         """Predict integer demand for a specific SKU-region at target_date."""
-        target_month = int(target_date.split("-")[1])
+        target_month = int(str(target_date).strip().split("-")[1])
         g = self.history_by_series.get((sku_id, region))
         if g is None or g.empty:
             return 0
@@ -70,7 +70,7 @@ class TrailingMeanModel:
                 self.averages[(sku, region)] = 0.0
         return self
 
-    def predict(self, sku_id: str, region: str, target_date: str) -> int:
+    def predict(self, sku_id: str, region: str, target_date: str, horizon: int = 1) -> int:
         """Predict integer demand for SKU-region."""
         mean_val = self.averages.get((sku_id, region), 0.0)
         return int(round(max(0.0, mean_val)))
@@ -191,9 +191,9 @@ class PooledDirectModel:
 
         return self
 
-    def predict(self, sku_id: str, region: str, target_date: str, horizon: int) -> int:
+    def predict(self, sku_id: str, region: str, target_date: str, horizon: int = 1) -> int:
         """Predict non-negative integer demand."""
-        target_month = int(target_date.split("-")[1])
+        target_month = int(str(target_date).strip().split("-")[1])
         f = self.origin_features.get((sku_id, region))
         fallback = self.fallback_averages.get((sku_id, region), 0.0)
 
@@ -274,7 +274,7 @@ class CrostonSBAModel:
 
         return self
 
-    def predict(self, sku_id: str, region: str, target_date: str) -> int:
+    def predict(self, sku_id: str, region: str, target_date: str, horizon: int = 1) -> int:
         """Predict non-negative integer demand."""
         rate = self.series_estimates.get((sku_id, region), 0.0)
         return int(round(max(0.0, rate)))

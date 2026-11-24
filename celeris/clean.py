@@ -45,19 +45,40 @@ def clean_history_transactions(
     df.columns = [c.strip() for c in df.columns]
 
     # 2. Date Authority: Parse Date and verify Year/Month
-    df["Date"] = df["Date"].astype(str).str.strip()
-    parsed_date = pd.to_datetime(df["Date"], format="%Y-%m", errors="coerce")
+    raw_date_str = df["Date"].astype(str).str.strip()
+    cleaned_date_str = raw_date_str.str.slice(0, 7)
+
+    # Normalize YYYY-MM if full timestamp or day was provided
+    format_diff = (raw_date_str != cleaned_date_str) & df["Date"].notna()
+    for idx in df[format_diff].index:
+        rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+        pkey = f"{cleaned_date_str.loc[idx]}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{df.loc[idx, 'Region'] if 'Region' in df.columns else ''}"
+        quality_records.append(QualityRecord(
+            file_name=file_name,
+            source_row_id=rec_id,
+            planning_key=pkey,
+            field="Date",
+            rule="date_format_normalization",
+            original_value=str(raw_date_str.loc[idx]),
+            cleaned_value=str(cleaned_date_str.loc[idx]),
+            decision="normalized_to_monthly_grain",
+            reason=f"Date string '{raw_date_str.loc[idx]}' normalized to authoritative monthly grain YYYY-MM",
+            linked_evidence=f"Original={raw_date_str.loc[idx]}",
+        ))
+
+    parsed_date = pd.to_datetime(cleaned_date_str, format="%Y-%m", errors="coerce")
     valid_date_mask = parsed_date.notna()
 
     # Derived Year and Month
     derived_year = parsed_date.dt.year
     derived_month = parsed_date.dt.month
 
-    for idx, row in df[valid_date_mask].iterrows():
-        rec_id = str(row.get("Record_ID", idx))
-        pkey = f"{row.get('Date')}|{row.get('SKU_ID')}|{row.get('Region')}"
-        curr_year = row.get("Year")
-        curr_month = row.get("Month")
+    for idx in df[valid_date_mask].index:
+        rec_id = str(df.loc[idx, "Record_ID"]) if "Record_ID" in df.columns else str(idx)
+        normalized_d = cleaned_date_str.loc[idx]
+        pkey = f"{normalized_d}|{df.loc[idx, 'SKU_ID'] if 'SKU_ID' in df.columns else ''}|{df.loc[idx, 'Region'] if 'Region' in df.columns else ''}"
+        curr_year = df.loc[idx, "Year"] if "Year" in df.columns else None
+        curr_month = df.loc[idx, "Month"] if "Month" in df.columns else None
         d_year = int(derived_year.loc[idx])
         d_month = int(derived_month.loc[idx])
 
@@ -72,7 +93,7 @@ def clean_history_transactions(
                 cleaned_value=str(d_year),
                 decision="repaired_from_date",
                 reason="Year in record conflicted with authoritative Date",
-                linked_evidence=f"Date={row['Date']}",
+                linked_evidence=f"Date={normalized_d}",
             ))
 
         if pd.notna(curr_month) and int(curr_month) != d_month:
@@ -86,9 +107,10 @@ def clean_history_transactions(
                 cleaned_value=str(d_month),
                 decision="repaired_from_date",
                 reason="Month in record conflicted with authoritative Date",
-                linked_evidence=f"Date={row['Date']}",
+                linked_evidence=f"Date={normalized_d}",
             ))
 
+    df["Date"] = cleaned_date_str
     df["Year"] = derived_year.astype("Int64")
     df["Month"] = derived_month.astype("Int64")
 

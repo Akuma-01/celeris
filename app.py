@@ -343,6 +343,8 @@ def main():
             )
 
             st.altair_chart(line_chart + rule, use_container_width=True)
+        else:
+            st.info("No timeline observations available for the current filter criteria.")
 
         # Mix breakdowns
         col_m1, col_m2 = st.columns(2)
@@ -553,32 +555,37 @@ def main():
                         "Scored Months": len(c_df),
                     })
 
-            st.dataframe(pd.DataFrame(summary_rows), use_container_width=True)
+            if summary_rows:
+                st.dataframe(pd.DataFrame(summary_rows), use_container_width=True)
 
-            st.markdown("---")
-            st.subheader("Backtest Origin Deep-Dive (Predicted vs Realized Demand)")
-            sel_fold = st.selectbox("Select Backtest Fold", options=sorted(scored_bt["fold"].unique()))
-            fold_plot_df = scored_bt[scored_bt["fold"] == sel_fold]
+                st.markdown("---")
+                st.subheader("Backtest Origin Deep-Dive (Predicted vs Realized Demand)")
+                available_folds = sorted(scored_bt["fold"].unique())
+                if available_folds:
+                    sel_fold = st.selectbox("Select Backtest Fold", options=available_folds)
+                    fold_plot_df = scored_bt[scored_bt["fold"] == sel_fold]
 
-            fold_chart_data = []
-            for _, r in fold_plot_df.groupby(["target_date", "candidate"])[["forecast", "actual"]].sum().reset_index().iterrows():
-                fold_chart_data.append({"Target Month": r["target_date"], "Units": r["actual"], "Series": "Actual Demand"})
-                fold_chart_data.append({"Target Month": r["target_date"], "Units": r["forecast"], "Series": f"Forecast ({r['candidate']})"})
+                    fold_chart_data = []
+                    for _, r in fold_plot_df.groupby(["target_date", "candidate"])[["forecast", "actual"]].sum().reset_index().iterrows():
+                        fold_chart_data.append({"Target Month": r["target_date"], "Units": r["actual"], "Series": "Actual Demand"})
+                        fold_chart_data.append({"Target Month": r["target_date"], "Units": r["forecast"], "Series": f"Forecast ({r['candidate']})"})
 
-            fcdf = pd.DataFrame(fold_chart_data).drop_duplicates()
-            if not fcdf.empty:
-                b_chart = (
-                    alt.Chart(fcdf)
-                    .mark_line(point=True)
-                    .encode(
-                        x=alt.X("Target Month:N", axis=alt.Axis(labelAngle=-45)),
-                        y=alt.Y("Units:Q", title="Monthly Units"),
-                        color=alt.Color("Series:N"),
-                        tooltip=["Target Month", "Series", "Units"],
-                    )
-                    .properties(height=360)
-                )
-                st.altair_chart(b_chart, use_container_width=True)
+                    fcdf = pd.DataFrame(fold_chart_data).drop_duplicates()
+                    if not fcdf.empty:
+                        b_chart = (
+                            alt.Chart(fcdf)
+                            .mark_line(point=True)
+                            .encode(
+                                x=alt.X("Target Month:N", axis=alt.Axis(labelAngle=-45)),
+                                y=alt.Y("Units:Q", title="Monthly Units"),
+                                color=alt.Color("Series:N"),
+                                tooltip=["Target Month", "Series", "Units"],
+                            )
+                            .properties(height=360)
+                        )
+                        st.altair_chart(b_chart, use_container_width=True)
+            else:
+                st.info("No backtest predictions match the selected filter criteria.")
 
         st.markdown("---")
         st.subheader("Published Final Forecast Table (`forecast.parquet`)")
