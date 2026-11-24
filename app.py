@@ -92,6 +92,9 @@ def load_data(artifact_dir: str = "artifacts/fixture_run") -> Dict[str, Any]:
     quality_path = base_path / "quality.parquet"
     anomalies_path = base_path / "anomalies.parquet"
     backtest_path = base_path / "backtest.parquet"
+    stockouts_path = base_path / "stockouts.parquet"
+    sku_master_path = base_path / "sku_master.parquet"
+    macro_path = base_path / "macro_lead_lag.parquet"
     manifest_path = base_path / "manifest.json"
 
     data: Dict[str, Any] = {}
@@ -119,6 +122,21 @@ def load_data(artifact_dir: str = "artifacts/fixture_run") -> Dict[str, Any]:
         data["backtest"] = pd.read_parquet(backtest_path)
     else:
         data["backtest"] = pd.DataFrame()
+
+    if stockouts_path.exists():
+        data["stockouts"] = pd.read_parquet(stockouts_path)
+    else:
+        data["stockouts"] = pd.DataFrame()
+
+    if sku_master_path.exists():
+        data["sku_master"] = pd.read_parquet(sku_master_path)
+    else:
+        data["sku_master"] = pd.DataFrame()
+
+    if macro_path.exists():
+        data["macro_lead_lag"] = pd.read_parquet(macro_path)
+    else:
+        data["macro_lead_lag"] = pd.DataFrame()
 
     if manifest_path.exists():
         with open(manifest_path, "r", encoding="utf-8") as f:
@@ -213,6 +231,9 @@ def main():
     filt_quality = filter_dataframe(data["quality"], filters)
     filt_anomalies = filter_dataframe(data["anomalies"], filters)
     filt_backtest = filter_dataframe(data["backtest"], filters)
+    filt_stockouts = filter_dataframe(data.get("stockouts", pd.DataFrame()), filters)
+    filt_sku_master = filter_dataframe(data.get("sku_master", pd.DataFrame()), filters)
+    filt_macro = filter_dataframe(data.get("macro_lead_lag", pd.DataFrame()), filters)
 
     st.sidebar.markdown("---")
     st.sidebar.caption("Navigation Views")
@@ -226,6 +247,8 @@ def main():
             "3. Demand Explorer",
             "4. Anomaly Monitor",
             "5. Forecast & Accuracy",
+            "6. Stockouts & Lost Sales",
+            "7. Lifecycle Planning",
         ],
     )
 
@@ -446,6 +469,20 @@ def main():
                 sku_df[["Date", "Units_Sold", "reconstructed_demand", "demand_evidence", "is_observed", "Unit_Price_USD", "Revenue_USD"]],
                 use_container_width=True,
             )
+
+            # Macroeconomic Leading Drivers for this Product Family
+            fam = first_r.get("Product_Family", "")
+            macro_data = data.get("macro_lead_lag", pd.DataFrame())
+            if not macro_data.empty and fam:
+                fam_macro = macro_data[macro_data["Product_Family"] == fam]
+                if not fam_macro.empty:
+                    best_rec = fam_macro[fam_macro["Is_Best_For_Family"]].iloc[0] if fam_macro["Is_Best_For_Family"].any() else fam_macro.iloc[0]
+                    st.markdown("---")
+                    st.subheader(f"Leading Macro Drivers for {fam}")
+                    st.info(
+                        f"⚡ **Leading Macro Indicator:** `{best_rec['Best_Indicator']}` leads `{fam}` demand by "
+                        f"**{int(best_rec['Best_Lag'])} months** (Peak Pearson Correlation: `r = {best_rec['Best_Correlation']:+.2f}`)."
+                    )
         else:
             st.warning("No historical series match current filters.")
 
@@ -553,6 +590,205 @@ def main():
             ]],
             use_container_width=True,
         )
+
+    # VIEW 6: STOCKOUTS & LOST SALES (Advanced View 1)
+    elif view == "6. Stockouts & Lost Sales":
+        st.markdown('<h1 class="main-header">Stockouts & Lost Sales Analysis</h1>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sub-header">Unconstrained requested demand restoration, backorders, lost sales, and fill rate timeline.</p>',
+            unsafe_allow_html=True,
+        )
+
+        stockouts_df = filt_stockouts
+        if not stockouts_df.empty:
+            req_units = int(stockouts_df["Requested_Units"].sum()) if "Requested_Units" in stockouts_df.columns else 0
+            shp_units = int(stockouts_df["Shipped_Units"].sum()) if "Shipped_Units" in stockouts_df.columns else 0
+            bck_units = int(stockouts_df["Backordered_Units"].sum()) if "Backordered_Units" in stockouts_df.columns else 0
+            car_units = int(stockouts_df["Carried_In_Units"].sum()) if "Carried_In_Units" in stockouts_df.columns else 0
+            lst_units = int(stockouts_df["Lost_Units"].sum()) if "Lost_Units" in stockouts_df.columns else 0
+            fill_pct = (shp_units / req_units * 100.0) if req_units > 0 else 100.0
+            stk_days = int(stockouts_df["Stockout_Days"].sum()) if "Stockout_Days" in stockouts_df.columns else 0
+
+            s1, s2, s3, s4, s5 = st.columns(5)
+            with s1:
+                st.metric("Total Requested Units", f"{req_units:,} units")
+            with s2:
+                st.metric("Shipped Units", f"{shp_units:,} units", delta=f"{fill_pct:.1f}% fill rate")
+            with s3:
+                st.metric("Backorder / Carry-In", f"{(bck_units + car_units):,} units")
+            with s4:
+                st.metric("Permanently Lost Sales", f"{lst_units:,} units")
+            with s5:
+                st.metric("Stockout Duration", f"{stk_days:,} days", delta=f"{len(stockouts_df)} incident(s)")
+
+            st.markdown("---")
+            st.subheader("Requested vs Shipped vs Lost Units Timeline")
+
+            monthly_stk = stockouts_df.groupby("Date")[["Requested_Units", "Shipped_Units", "Lost_Units"]].sum().reset_index()
+            stk_chart_rows = []
+            for _, r in monthly_stk.iterrows():
+                stk_chart_rows.append({"Date": r["Date"], "Units": r["Requested_Units"], "Category": "Requested Units (Unconstrained)"})
+                stk_chart_rows.append({"Date": r["Date"], "Units": r["Shipped_Units"], "Category": "Shipped Units"})
+                stk_chart_rows.append({"Date": r["Date"], "Units": r["Lost_Units"], "Category": "Lost Units"})
+            stk_chart_df = pd.DataFrame(stk_chart_rows)
+
+            if not stk_chart_df.empty:
+                c_stk = (
+                    alt.Chart(stk_chart_df)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("Date:N", axis=alt.Axis(labelAngle=-45)),
+                        y=alt.Y("Units:Q"),
+                        color=alt.Color("Category:N", scale=alt.Scale(range=["#3B82F6", "#10B981", "#EF4444"])),
+                        xOffset="Category:N",
+                        tooltip=["Date", "Category", "Units"],
+                    )
+                    .properties(height=320)
+                )
+                st.altair_chart(c_stk, use_container_width=True)
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.subheader("Fill Rate % Timeline")
+                if "Fill_Rate_Pct" in stockouts_df.columns:
+                    fr_chart = (
+                        alt.Chart(stockouts_df)
+                        .mark_line(point=True, color="#F59E0B")
+                        .encode(
+                            x=alt.X("Date:N", axis=alt.Axis(labelAngle=-45)),
+                            y=alt.Y("Fill_Rate_Pct:Q", title="Fill Rate (%)", scale=alt.Scale(domain=[0, 100])),
+                            tooltip=["Date", "SKU_ID", "Region", "Fill_Rate_Pct", "Stockout_Days"],
+                        )
+                        .properties(height=260)
+                    )
+                    st.altair_chart(fr_chart, use_container_width=True)
+
+            with col_b:
+                st.subheader("Root-Cause Reason Distribution")
+                if "Reason" in stockouts_df.columns:
+                    reason_counts = stockouts_df["Reason"].value_counts().reset_index()
+                    reason_counts.columns = ["Shortage Reason", "Incident Count"]
+                    r_chart = (
+                        alt.Chart(reason_counts)
+                        .mark_bar(color="#6366F1")
+                        .encode(
+                            x=alt.X("Incident Count:Q"),
+                            y=alt.Y("Shortage Reason:N", sort="-x"),
+                            tooltip=["Shortage Reason", "Incident Count"],
+                        )
+                        .properties(height=260)
+                    )
+                    st.altair_chart(r_chart, use_container_width=True)
+
+            st.markdown("---")
+            st.subheader("Stockout Incident Register (`stockouts.parquet`)")
+            st.dataframe(stockouts_df, use_container_width=True)
+        else:
+            st.info("No stockout incidents match the current filters.")
+
+    # VIEW 7: LIFECYCLE PLANNING (Advanced View 2)
+    elif view == "7. Lifecycle Planning":
+        st.markdown('<h1 class="main-header">Lifecycle & Transition Planning</h1>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sub-header">Catalog lifecycle phases, predecessor replacement links (`Replaces_SKU`), and phase-in/phase-out ramps.</p>',
+            unsafe_allow_html=True,
+        )
+
+        sku_master = filt_sku_master if not filt_sku_master.empty else data.get("sku_master", pd.DataFrame())
+        if not sku_master.empty:
+            total_skus = len(sku_master)
+            active_skus = len(sku_master[sku_master["Lifecycle_Status"] == "Active"]) if "Lifecycle_Status" in sku_master.columns else 0
+            discont_skus = len(sku_master[sku_master["Lifecycle_Status"] == "Discontinued"]) if "Lifecycle_Status" in sku_master.columns else 0
+            replaces_count = int(sku_master["Replaces_SKU"].notna().sum()) if "Replaces_SKU" in sku_master.columns else 0
+
+            l1, l2, l3, l4 = st.columns(4)
+            with l1:
+                st.metric("Catalog SKUs", f"{total_skus:,} SKUs")
+            with l2:
+                st.metric("Active Lifecycle", f"{active_skus:,} SKUs", delta=f"{active_skus/total_skus:.0%}" if total_skus else "")
+            with l3:
+                st.metric("Discontinued / EOL", f"{discont_skus:,} SKUs", delta=f"-{discont_skus/total_skus:.0%}" if total_skus else "", delta_color="inverse")
+            with l4:
+                st.metric("Predecessor Links", f"{replaces_count:,} SKUs", delta="Cold-start mappings")
+
+            st.markdown("---")
+            col_l1, col_l2 = st.columns(2)
+            with col_l1:
+                st.subheader("SKU Distribution by Lifecycle Status")
+                if "Lifecycle_Status" in sku_master.columns and "Product_Family" in sku_master.columns:
+                    status_summary = sku_master.groupby(["Product_Family", "Lifecycle_Status"]).size().reset_index(name="SKU Count")
+                    ls_chart = (
+                        alt.Chart(status_summary)
+                        .mark_bar()
+                        .encode(
+                            x=alt.X("Product_Family:N", axis=alt.Axis(labelAngle=-30)),
+                            y=alt.Y("SKU Count:Q"),
+                            color=alt.Color("Lifecycle_Status:N", scale=alt.Scale(domain=["Active", "Discontinued"], range=["#10B981", "#EF4444"])),
+                            tooltip=["Product_Family", "Lifecycle_Status", "SKU Count"],
+                        )
+                        .properties(height=280)
+                    )
+                    st.altair_chart(ls_chart, use_container_width=True)
+
+            with col_l2:
+                st.subheader("Powertrain Application Mix")
+                if "Powertrain_Application" in sku_master.columns:
+                    pt_summary = sku_master["Powertrain_Application"].value_counts().reset_index()
+                    pt_summary.columns = ["Powertrain", "SKU Count"]
+                    pt_chart = (
+                        alt.Chart(pt_summary)
+                        .mark_arc(innerRadius=45)
+                        .encode(
+                            theta=alt.Theta("SKU Count:Q"),
+                            color=alt.Color("Powertrain:N", scale=alt.Scale(range=["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B"])),
+                            tooltip=["Powertrain", "SKU Count"],
+                        )
+                        .properties(height=280)
+                    )
+                    st.altair_chart(pt_chart, use_container_width=True)
+
+            st.markdown("---")
+            st.subheader("Predecessor-Successor Cold Start Transition Ramp")
+            replaces_skus = sku_master[sku_master["Replaces_SKU"].notna()]["SKU_ID"].tolist() if "Replaces_SKU" in sku_master.columns else []
+            if replaces_skus:
+                sel_trans_sku = st.selectbox("Select New SKU with Predecessor", options=replaces_skus)
+                pred_row = sku_master[sku_master["SKU_ID"] == sel_trans_sku].iloc[0]
+                pred_sku = pred_row["Replaces_SKU"]
+                launch_date = pred_row.get("Launch_Date", "N/A")
+
+                st.info(f"⚡ **SKU Transition:** `{sel_trans_sku}` replaces predecessor `{pred_sku}` (Effective Launch: `{launch_date}`). Forecast cold-start is seeded from predecessor history.")
+
+                pred_hist = filt_history[filt_history["SKU_ID"] == pred_sku].sort_values("Date")
+                succ_fct = filt_forecast[filt_forecast["SKU_ID"] == sel_trans_sku].sort_values("Date")
+
+                ramp_rows = []
+                for _, r in pred_hist.iterrows():
+                    ramp_rows.append({"Date": r["Date"], "Units": r.get("reconstructed_demand", r.get("Units_Sold", 0)), "Series": f"Predecessor ({pred_sku}) Demand"})
+                for _, r in succ_fct.iterrows():
+                    ramp_rows.append({"Date": r["Date"], "Units": r.get("Units_Sold_Forecast", 0), "Series": f"New SKU ({sel_trans_sku}) Forecast Ramp"})
+
+                ramp_df = pd.DataFrame(ramp_rows)
+                if not ramp_df.empty:
+                    ramp_chart = (
+                        alt.Chart(ramp_df)
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X("Date:N", axis=alt.Axis(labelAngle=-45)),
+                            y=alt.Y("Units:Q", title="Monthly Units"),
+                            color=alt.Color("Series:N", scale=alt.Scale(range=["#6B7280", "#2563EB"])),
+                            tooltip=["Date", "Series", "Units"],
+                        )
+                        .properties(height=320)
+                    )
+                    st.altair_chart(ramp_chart, use_container_width=True)
+            else:
+                st.caption("No replacement links found in current filtered catalog.")
+
+            st.markdown("---")
+            st.subheader("SKU Master Catalog (`sku_master.parquet`)")
+            st.dataframe(sku_master, use_container_width=True)
+        else:
+            st.info("No SKU master data found.")
 
 
 if __name__ == "__main__":

@@ -220,10 +220,11 @@ def inspect_forecast_rows(file_path: Path) -> ForecastKeysProfile:
     )
 
 
-def diagnose_input_directory(data_dir: Path) -> DiagnosticReport:
+def diagnose_input_directory(data_dir: Path | str) -> DiagnosticReport:
     """Diagnose all CSV files in the input directory and resolve their dataset roles."""
     import datetime
 
+    data_dir = Path(data_dir)
     csv_files = sorted(data_dir.glob("*.csv"))
     if not csv_files:
         return DiagnosticReport(

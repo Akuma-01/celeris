@@ -100,7 +100,7 @@ def test_backtest_execution_and_selection(fixture_data_dir: Path, tmp_path: Path
 
     # Assert 3 folds are present
     assert set(bt_df["fold"].unique()) == {"Fold_1", "Fold_2", "Fold_3_Frozen_Holdout"}
-    assert set(bt_df["candidate"].unique()) == {"seasonal_naive", "trailing_mean", "pooled_direct"}
+    assert {"seasonal_naive", "trailing_mean", "pooled_direct"}.issubset(set(bt_df["candidate"].unique()))
 
     # Assert all forecasts are non-negative integers
     assert (bt_df["forecast"] >= 0).all()
@@ -109,7 +109,7 @@ def test_backtest_execution_and_selection(fixture_data_dir: Path, tmp_path: Path
     # Verify summary metrics
     summary = res.backtest_summary
     assert summary is not None
-    assert summary["selected_winner"] in ["seasonal_naive", "trailing_mean", "pooled_direct"]
+    assert summary["selected_winner"] in ["seasonal_naive", "trailing_mean", "pooled_direct", "intermittent_challenger"]
     assert "development_metrics" in summary
     assert "frozen_holdout_metrics" in summary
 

@@ -2,7 +2,7 @@
 CELERIS AUTOMOBILI — INPUT INVENTORY & ROLE RESOLUTION REPORT
 ================================================================================
 Directory: /home/akuma/projects/hackathon/celeris/fixtures/data
-Timestamp: 2026-11-23T16:38:55.935215+00:00
+Timestamp: 2026-11-23T17:14:14.592431+00:00
 Status   : READY
 --------------------------------------------------------------------------------
 

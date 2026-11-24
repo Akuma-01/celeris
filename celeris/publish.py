@@ -8,7 +8,12 @@ from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 import pandas as pd
 
-from celeris.forecast import SeasonalNaiveModel, TrailingMeanModel, PooledDirectModel
+from celeris.forecast import (
+    SeasonalNaiveModel,
+    TrailingMeanModel,
+    PooledDirectModel,
+    IntermittentChallengerModel,
+)
 
 
 @dataclass
@@ -96,11 +101,13 @@ def generate_final_forecast(
     snaive = SeasonalNaiveModel().fit(as_of_history, cutoff_date)
     tmean = TrailingMeanModel().fit(as_of_history, cutoff_date)
     pooled = PooledDirectModel().fit(as_of_history, cutoff_date)
+    intermittent = IntermittentChallengerModel().fit(as_of_history, cutoff_date)
 
     models = {
         "seasonal_naive": snaive,
         "trailing_mean": tmean,
         "pooled_direct": pooled,
+        "intermittent_challenger": intermittent,
     }
     selected_model = models.get(winning_model_name, pooled)
 
@@ -152,7 +159,7 @@ def generate_final_forecast(
 
             # Check if series has historical orders
             if (sku, reg) in observed_series:
-                if winning_model_name == "pooled_direct":
+                if winning_model_name in ["pooled_direct", "intermittent_challenger"]:
                     point_forecast = selected_model.predict(sku, reg, d, h)
                 else:
                     point_forecast = selected_model.predict(sku, reg, d)
@@ -161,7 +168,7 @@ def generate_final_forecast(
             # Cold start: check predecessor
             elif replaces_sku and (replaces_sku, reg) in observed_series:
                 # Use predecessor demand history
-                if winning_model_name == "pooled_direct":
+                if winning_model_name in ["pooled_direct", "intermittent_challenger"]:
                     point_forecast = selected_model.predict(replaces_sku, reg, d, h)
                 else:
                     point_forecast = selected_model.predict(replaces_sku, reg, d)

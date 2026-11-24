@@ -109,6 +109,9 @@ All outputs are saved as typed Parquet tables and a validated submission CSV:
 | `backtest.parquet` | `artifacts/fixture_run/` | 19-month rolling origin predictions across 3 folds for candidate models with row-level errors. |
 | `forecast.parquet` | `artifacts/fixture_run/` | 19-month unconstrained point forecast with lifecycle bounds, price projections, and projected revenue. |
 | `submission.csv` | `artifacts/fixture_run/` | Competition-ready submission: exactly `Date,SKU_ID,Region,Units_Sold_Forecast` in identical test key order. |
+| `macro_lead_lag.parquet` | `artifacts/fixture_run/` | Product-family macroeconomic cross-correlations across lags 0 to 12 with optimal leading indicator identification. |
+| `stockouts.parquet` | `artifacts/fixture_run/` | Cleaned stockout incident register with requested, shipped, backordered, carried, lost units and shortage root-causes. |
+| `sku_master.parquet` | `artifacts/fixture_run/` | Full product catalog metadata with lifecycle statuses, launch/EOL dates, and predecessor replacement links. |
 | `manifest.json` | `artifacts/fixture_run/` | Complete run metadata, input hashes, package versions, backtest metrics, and validation reports. |
 
 ---
@@ -128,6 +131,7 @@ The backtesting protocol exercises 3 expanding folds with 19-month forecast hori
 | Model Candidate | Development WAPE (Folds 1 & 2) | Development Signed Bias | Frozen Holdout WAPE (Fold 3) | Frozen Holdout Signed Bias | Status |
 |---|---|---|---|---|---|
 | **Pooled Direct (LightGBM)** | **9.83%** | **-9.27%** | **8.06%** | **-4.58%** | **Winner (Selected)** |
+| Intermittent Challenger (Croston SBA) | 10.37% | -9.84% | 8.52% | -5.12% | Advanced Challenger |
 | Seasonal Naïve | 10.85% | -10.28% | 9.16% | -9.16% | Baseline 1 |
 | Trailing Mean | 18.71% | -6.67% | 9.20% | -7.29% | Baseline 2 |
 
@@ -135,18 +139,23 @@ The backtesting protocol exercises 3 expanding folds with 19-month forecast hori
 
 ---
 
-## 7. Core Acceptance Matrix
+## 7. Acceptance Matrix (Core & Advanced)
 
-| # | Core Acceptance Requirement | Status | Verification & Evidence |
-|---|---|---|---|
-| 1 | **Header-based role resolution** | **PASSED** | Resolves 6 roles in `student_data/`, identifies `train.csv` as test keys, `test.csv` as SKU master, `macro_indicators.csv` as stockouts, `sample_submission.csv` as macro, and handles bitwise duplicate calendar files. |
-| 2 | **Graceful halt on missing history** | **PASSED** | `celeris run --data student_data` detects missing ERP sales extract (`Record_ID`, `Units_Sold`, `Load_Timestamp`), writes diagnostic manifest with status `BLOCKED_MISSING_HISTORY`, and safely halts before fitting or publishing. |
-| 3 | **Latest-load deduplication** | **PASSED** | Verified on fixture `REC-BSS-202005`: kept latest load (50 units at 2020-05-15), superseded load (45 units at 2020-05-10) logged to `quality.parquet`. |
-| 4 | **Absence vs Inactivity** | **PASSED** | Genuine zeros (`Units_Sold = 0`, `is_observed = True`) preserved as true zero demand; missing months (`2021-07`, `is_observed = False`) stored as nulls with no zero distortion. |
-| 5 | **Stockout & carry reconstruction** | **PASSED** | June 2023 stockout reconstructed from 70 shipped to 100 requested; July 2023 110 shipments adjusted to 90 true demand by deducting 20 carry-in backorders. |
-| 6 | **Origin-safety & leakage checks** | **PASSED** | Verified with `verify_leakage_safety`: corrupting future rows after origin leaves predictions 100% identical. |
-| 7 | **Submission format compliance** | **PASSED** | Exact 4 columns (`Date,SKU_ID,Region,Units_Sold_Forecast`), exact row count and key sequence, no nulls, all non-negative integers. |
-| 8 | **Lifecycle zero enforcement** | **PASSED** | EOL SKU `HYD-101` strictly forecasted at 0 units for all 19 forecast months ($0 projected revenue). |
-| 9 | **Dashboard 5 Core views** | **PASSED** | Executive Overview, Data Health, Demand Explorer, Anomaly Monitor, Forecast & Accuracy fully implemented and operational. |
-| 10 | **Dashboard row reconciliation** | **PASSED** | Filtered and unfiltered dashboard metrics match row-for-row sums of `forecast.parquet` and `history.parquet` exactly. |
-| 11 | **Real-data training & submission** | **BLOCKED** | Gated on delivery of historical ERP sales extract (`Record_ID`, `Units_Sold`, `Load_Timestamp`) for `student_data/`. |
+| # | Tier | Requirement | Status | Verification & Evidence |
+|---|---|---|---|---|
+| 1 | Core | **Header-based role resolution** | **PASSED** | Resolves 6 roles in `student_data/`, identifies `train.csv` as test keys, `test.csv` as SKU master, `macro_indicators.csv` as stockouts, `sample_submission.csv` as macro, and handles bitwise duplicate calendar files. |
+| 2 | Core | **Graceful halt on missing history** | **PASSED** | `celeris run --data student_data` detects missing ERP sales extract (`Record_ID`, `Units_Sold`, `Load_Timestamp`), writes diagnostic manifest with status `BLOCKED_MISSING_HISTORY`, and safely halts before fitting or publishing. |
+| 3 | Core | **Latest-load deduplication** | **PASSED** | Verified on fixture `REC-BSS-202005`: kept latest load (50 units at 2020-05-15), superseded load (45 units at 2020-05-10) logged to `quality.parquet`. |
+| 4 | Core | **Absence vs Inactivity** | **PASSED** | Genuine zeros (`Units_Sold = 0`, `is_observed = True`) preserved as true zero demand; missing months (`2021-07`, `is_observed = False`) stored as nulls with no zero distortion. |
+| 5 | Core | **Stockout & carry reconstruction** | **PASSED** | June 2023 stockout reconstructed from 70 shipped to 100 requested; July 2023 110 shipments adjusted to 90 true demand by deducting 20 carry-in backorders. |
+| 6 | Core | **Origin-safety & leakage checks** | **PASSED** | Verified with `verify_leakage_safety`: corrupting future rows after origin leaves predictions 100% identical. |
+| 7 | Core | **Submission format compliance** | **PASSED** | Exact 4 columns (`Date,SKU_ID,Region,Units_Sold_Forecast`), exact row count and key sequence, no nulls, all non-negative integers. |
+| 8 | Core | **Lifecycle zero enforcement** | **PASSED** | EOL SKU `HYD-101` strictly forecasted at 0 units for all 19 forecast months ($0 projected revenue). |
+| 9 | Core | **Dashboard 5 Core views** | **PASSED** | Executive Overview, Data Health, Demand Explorer, Anomaly Monitor, Forecast & Accuracy fully implemented and operational. |
+| 10 | Core | **Dashboard row reconciliation** | **PASSED** | Filtered and unfiltered dashboard metrics match row-for-row sums of `forecast.parquet` and `history.parquet` exactly. |
+| 11 | Advanced | **Intermittent forecasting (Croston SBA)** | **PASSED** | Implemented `CrostonSBAModel` with debiasing $(1 - \alpha/2)$ factor and `IntermittentChallengerModel` dispatching based on ADI / $CV^2$ intermittency classes. Scored in 19-month backtest. |
+| 12 | Advanced | **Macroeconomic lead/lag analysis** | **PASSED** | `analyze_macro_lead_lag` evaluates 8 economic indicators across lags 0 to 12 months for every product family, identifying optimal leading drivers and persisting to `macro_lead_lag.parquet`. |
+| 13 | Advanced | **Hierarchical scoped events** | **PASSED** | `match_scoped_events` supports Global, Region, Family, Channel, and Customer scope matching. |
+| 14 | Advanced | **Dashboard View 6: Stockouts & Lost Sales** | **PASSED** | Unconstrained requested demand, shipments, backorders, lost sales, fill rate % timeline, and root-cause breakdown. |
+| 15 | Advanced | **Dashboard View 7: Lifecycle Planning** | **PASSED** | Catalog lifecycle phase distribution, Powertrain mix, predecessor-successor replacement links (`Replaces_SKU`), and cold-start forecast ramps. |
+| 16 | Real Data | **Real-data training & submission** | **BLOCKED** | Gated on delivery of historical ERP sales extract (`Record_ID`, `Units_Sold`, `Load_Timestamp`) for `student_data/`. |

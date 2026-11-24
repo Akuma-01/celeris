@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261123_163855_1b35a5",
-  "run_timestamp": "2026-11-23T16:38:55.936693+00:00",
+  "run_id": "run_20261123_171414_acae27",
+  "run_timestamp": "2026-11-23T17:14:14.595512+00:00",
   "run_mode": "fixture",
   "is_fixture": true,
   "data_dir": "/home/akuma/projects/hackathon/celeris/fixtures/data",
@@ -63,7 +63,7 @@
     "quality_issues_logged": 1,
     "anomalies_logged": 134,
     "total_reconstructed_demand": 21052.0,
-    "backtest_rows": 684,
+    "backtest_rows": 912,
     "leakage_check_passed": true,
     "selected_winning_model": "pooled_direct",
     "development_metrics": {
@@ -86,6 +86,13 @@
         "signed_bias": -0.0927,
         "total_actual": 8785.0,
         "total_forecast": 7971.0,
+        "rows": 114
+      },
+      "intermittent_challenger": {
+        "wape": 0.1931,
+        "signed_bias": -0.0947,
+        "total_actual": 8785.0,
+        "total_forecast": 7953.0,
         "rows": 114
       }
     },
@@ -110,22 +117,50 @@
         "total_actual": 5349.0,
         "total_forecast": 5104.0,
         "rows": 57
+      },
+      "intermittent_challenger": {
+        "wape": 0.0806,
+        "signed_bias": -0.0458,
+        "total_actual": 5349.0,
+        "total_forecast": 5104.0,
+        "rows": 57
       }
     },
     "submission_rows": 76,
     "submission_total_units": 5480,
     "submission_projected_revenue": 1523749.5,
-    "submission_validation_passed": true
+    "submission_validation_passed": true,
+    "macro_leading_indicators": {
+      "Brake & Safety Systems": {
+        "best_indicator": "Raw_Material_Cost_Index",
+        "best_lag": 3,
+        "correlation": 0.4946
+      },
+      "Hydraulic Systems": {
+        "best_indicator": "ISM_Manufacturing_PMI",
+        "best_lag": 5,
+        "correlation": 0.79
+      },
+      "Powertrain Components": {
+        "best_indicator": "Raw_Material_Cost_Index",
+        "best_lag": 1,
+        "correlation": 0.9731
+      }
+    }
   },
   "metadata": {
-    "stage": "milestone_4_forecast_and_submission",
+    "stage": "advanced_demand_planning_control_tower",
+    "tier": "Advanced",
     "published_artifacts": {
       "history": "artifacts/fixture_run/history.parquet",
       "quality": "artifacts/fixture_run/quality.parquet",
       "anomalies": "artifacts/fixture_run/anomalies.parquet",
       "backtest": "artifacts/fixture_run/backtest.parquet",
       "forecast": "artifacts/fixture_run/forecast.parquet",
-      "submission": "artifacts/fixture_run/submission.csv"
+      "submission": "artifacts/fixture_run/submission.csv",
+      "macro_lead_lag": "artifacts/fixture_run/macro_lead_lag.parquet",
+      "stockouts": "artifacts/fixture_run/stockouts.parquet",
+      "sku_master": "artifacts/fixture_run/sku_master.parquet"
     },
     "backtest_summary": {
       "development_metrics": {
@@ -149,6 +184,13 @@
           "total_actual": 8785.0,
           "total_forecast": 7971.0,
           "rows": 114
+        },
+        "intermittent_challenger": {
+          "wape": 0.1931,
+          "signed_bias": -0.0947,
+          "total_actual": 8785.0,
+          "total_forecast": 7953.0,
+          "rows": 114
         }
       },
       "selected_winner": "pooled_direct",
@@ -168,6 +210,13 @@
           "rows": 57
         },
         "pooled_direct": {
+          "wape": 0.0806,
+          "signed_bias": -0.0458,
+          "total_actual": 5349.0,
+          "total_forecast": 5104.0,
+          "rows": 57
+        },
+        "intermittent_challenger": {
           "wape": 0.0806,
           "signed_bias": -0.0458,
           "total_actual": 5349.0,
@@ -206,6 +255,16 @@
             "total_actual": 4178.0,
             "total_forecast": 3729.0,
             "scored_rows": 57
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.2169,
+            "signed_bias": -0.102,
+            "total_actual": 4178.0,
+            "total_forecast": 3752.0,
+            "scored_rows": 57
           }
         },
         "Fold_2": {
@@ -238,6 +297,16 @@
             "total_actual": 4607.0,
             "total_forecast": 4242.0,
             "scored_rows": 57
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.1715,
+            "signed_bias": -0.0881,
+            "total_actual": 4607.0,
+            "total_forecast": 4201.0,
+            "scored_rows": 57
           }
         },
         "Fold_3_Frozen_Holdout": {
@@ -262,6 +331,16 @@
             "scored_rows": 57
           },
           "pooled_direct": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.0806,
+            "signed_bias": -0.0458,
+            "total_actual": 5349.0,
+            "total_forecast": 5104.0,
+            "scored_rows": 57
+          },
+          "intermittent_challenger": {
             "fold": "Fold_3_Frozen_Holdout",
             "fold_type": "frozen_holdout",
             "origin": "2025-03",

@@ -15,6 +15,7 @@ import pandas as pd
 from celeris.clean import clean_history_transactions, QualityRecord
 from celeris.demand import reconstruct_demand_and_anomalies, AnomalyRecord
 from celeris.backtest import run_full_backtest, verify_leakage_safety, DEFAULT_FOLDS
+from celeris.macro import analyze_macro_lead_lag
 from celeris.publish import (
     generate_final_forecast,
     derive_submission,
@@ -142,18 +143,21 @@ class PipelineRunner:
         sku_master_files = report.role_mapping.get(DatasetRole.SKU_MASTER.value, [])
         stockouts_files = report.role_mapping.get(DatasetRole.STOCKOUTS.value, [])
         events_files = report.role_mapping.get(DatasetRole.EVENTS_CALENDAR.value, [])
+        macro_files = report.role_mapping.get(DatasetRole.MACRO_INDICATORS.value, [])
 
         history_path = self.data_dir / history_files[0]
         forecast_path = self.data_dir / forecast_files[0]
         sku_master_path = self.data_dir / sku_master_files[0]
         stockouts_path = self.data_dir / stockouts_files[0] if stockouts_files else None
         events_path = self.data_dir / events_files[0] if events_files else None
+        macro_path = self.data_dir / macro_files[0] if macro_files else None
 
         raw_history_df = pd.read_csv(history_path)
         forecast_keys_df = pd.read_csv(forecast_path)
         sku_master_df = pd.read_csv(sku_master_path) if sku_master_path.exists() else pd.DataFrame()
         stockouts_df = pd.read_csv(stockouts_path) if stockouts_path and stockouts_path.exists() else None
         events_df = pd.read_csv(events_path) if events_path and events_path.exists() else None
+        macro_df = pd.read_csv(macro_path) if macro_path and macro_path.exists() else pd.DataFrame()
 
         # Step 1: Clean transactions and latest-load deduplication
         cleaned_history_df, quality_records = clean_history_transactions(
@@ -207,6 +211,39 @@ class PipelineRunner:
                 "confidence", "action", "reason", "linked_evidence"
             ])
 
+        # Step 5b: Advanced macro lead/lag analysis and stockouts table
+        macro_lead_lag_results = analyze_macro_lead_lag(history_panel_df, macro_df)
+        macro_rows = []
+        for fam, res in macro_lead_lag_results.items():
+            for ind, lag_dict in res.all_correlations.items():
+                for lag, corr in lag_dict.items():
+                    macro_rows.append({
+                        "Product_Family": fam,
+                        "Indicator": ind,
+                        "Lag_Months": lag,
+                        "Correlation": corr,
+                        "Is_Best_For_Family": (ind == res.best_indicator and lag == res.best_lag),
+                        "Best_Indicator": res.best_indicator,
+                        "Best_Lag": res.best_lag,
+                        "Best_Correlation": res.correlation,
+                    })
+        macro_lead_lag_df = pd.DataFrame(macro_rows)
+        if macro_lead_lag_df.empty:
+            macro_lead_lag_df = pd.DataFrame(columns=[
+                "Product_Family", "Indicator", "Lag_Months", "Correlation",
+                "Is_Best_For_Family", "Best_Indicator", "Best_Lag", "Best_Correlation"
+            ])
+
+        clean_stockouts_df = stockouts_df.copy() if stockouts_df is not None and not stockouts_df.empty else pd.DataFrame(columns=[
+            "Date", "SKU_ID", "Region", "Requested_Units", "Carried_In_Units",
+            "Shipped_Units", "Backordered_Units", "Lost_Units", "Fill_Rate_Pct",
+            "Stockout_Days", "Reason"
+        ])
+        if not clean_stockouts_df.empty:
+            for col in ["Date", "SKU_ID", "Region"]:
+                if col in clean_stockouts_df.columns:
+                    clean_stockouts_df[col] = clean_stockouts_df[col].astype(str).str.strip()
+
         # Step 6: Save published artifacts
         history_parquet = staging_dir / "history.parquet"
         quality_parquet = staging_dir / "quality.parquet"
@@ -214,6 +251,9 @@ class PipelineRunner:
         backtest_parquet = staging_dir / "backtest.parquet"
         forecast_parquet = staging_dir / "forecast.parquet"
         submission_csv = staging_dir / "submission.csv"
+        macro_parquet = staging_dir / "macro_lead_lag.parquet"
+        stockouts_parquet = staging_dir / "stockouts.parquet"
+        sku_master_parquet = staging_dir / "sku_master.parquet"
 
         history_panel_df.to_parquet(history_parquet, index=False)
         quality_df.to_parquet(quality_parquet, index=False)
@@ -221,6 +261,9 @@ class PipelineRunner:
         backtest_df.to_parquet(backtest_parquet, index=False)
         forecast_df.to_parquet(forecast_parquet, index=False)
         submission_df.to_csv(submission_csv, index=False)
+        macro_lead_lag_df.to_parquet(macro_parquet, index=False)
+        clean_stockouts_df.to_parquet(stockouts_parquet, index=False)
+        sku_master_df.to_parquet(sku_master_parquet, index=False)
 
         # Copy to out_dir
         final_history = self.out_dir / "history.parquet"
@@ -229,6 +272,9 @@ class PipelineRunner:
         final_backtest = self.out_dir / "backtest.parquet"
         final_forecast = self.out_dir / "forecast.parquet"
         final_submission = self.out_dir / "submission.csv"
+        final_macro = self.out_dir / "macro_lead_lag.parquet"
+        final_stockouts = self.out_dir / "stockouts.parquet"
+        final_sku_master = self.out_dir / "sku_master.parquet"
 
         shutil.copy2(history_parquet, final_history)
         shutil.copy2(quality_parquet, final_quality)
@@ -236,6 +282,9 @@ class PipelineRunner:
         shutil.copy2(backtest_parquet, final_backtest)
         shutil.copy2(forecast_parquet, final_forecast)
         shutil.copy2(submission_csv, final_submission)
+        shutil.copy2(macro_parquet, final_macro)
+        shutil.copy2(stockouts_parquet, final_stockouts)
+        shutil.copy2(sku_master_parquet, final_sku_master)
 
         published_artifacts = {
             "history": str(final_history),
@@ -244,6 +293,9 @@ class PipelineRunner:
             "backtest": str(final_backtest),
             "forecast": str(final_forecast),
             "submission": str(final_submission),
+            "macro_lead_lag": str(final_macro),
+            "stockouts": str(final_stockouts),
+            "sku_master": str(final_sku_master),
         }
 
         # Step 7: Manifest recording
@@ -279,9 +331,18 @@ class PipelineRunner:
                 "submission_total_units": val_report.total_units_forecast,
                 "submission_projected_revenue": val_report.total_projected_revenue,
                 "submission_validation_passed": val_report.is_valid,
+                "macro_leading_indicators": {
+                    fam: {
+                        "best_indicator": res.best_indicator,
+                        "best_lag": res.best_lag,
+                        "correlation": res.correlation,
+                    }
+                    for fam, res in macro_lead_lag_results.items()
+                },
             },
             metadata={
-                "stage": "milestone_4_forecast_and_submission",
+                "stage": "advanced_demand_planning_control_tower",
+                "tier": "Advanced",
                 "published_artifacts": published_artifacts,
                 "backtest_summary": backtest_summary,
                 "submission_validation": {

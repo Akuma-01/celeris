@@ -1,7 +1,7 @@
 {
-  "current_run_id": "run_20261123_163855_1b35a5",
+  "current_run_id": "run_20261123_171414_acae27",
   "run_mode": "fixture",
-  "timestamp": "2026-11-23T16:38:55.936693+00:00",
+  "timestamp": "2026-11-23T17:14:14.595512+00:00",
   "manifest": "artifacts/fixture_run/manifest.json",
   "published_artifacts": {
     "history": "artifacts/fixture_run/history.parquet",
@@ -9,6 +9,9 @@
     "anomalies": "artifacts/fixture_run/anomalies.parquet",
     "backtest": "artifacts/fixture_run/backtest.parquet",
     "forecast": "artifacts/fixture_run/forecast.parquet",
-    "submission": "artifacts/fixture_run/submission.csv"
+    "submission": "artifacts/fixture_run/submission.csv",
+    "macro_lead_lag": "artifacts/fixture_run/macro_lead_lag.parquet",
+    "stockouts": "artifacts/fixture_run/stockouts.parquet",
+    "sku_master": "artifacts/fixture_run/sku_master.parquet"
   }
 }

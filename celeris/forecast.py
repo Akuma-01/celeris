@@ -225,3 +225,89 @@ class PooledDirectModel:
 
         pred = self.model.predict(feature_vector)[0]
         return int(round(max(0.0, float(pred))))
+
+
+
+class CrostonSBAModel:
+    """Syntetos-Boylan Approximation (SBA) of Croston's Method for intermittent demand.
+
+    Separates demand size and inter-demand arrival intervals with exponential smoothing,
+    applying the (1 - alpha/2) debiasing correction factor.
+    """
+
+    def __init__(self, alpha: float = 0.1) -> None:
+        self.alpha = alpha
+        self.series_estimates: Dict[Tuple[str, str], float] = {}
+
+    def fit(self, history_df: pd.DataFrame, origin_date: str) -> CrostonSBAModel:
+        """Fit Croston/SBA model on series demand history strictly up to origin_date."""
+        as_of_df = history_df[history_df["Date"] <= origin_date].copy()
+
+        for (sku, region), group in as_of_df.groupby(["SKU_ID", "Region"]):
+            demands = group.sort_values(by="Date")["reconstructed_demand"].dropna().tolist()
+            if not demands:
+                self.series_estimates[(sku, region)] = 0.0
+                continue
+
+            # Find first positive demand to initialize
+            first_pos_idx = next((i for i, v in enumerate(demands) if v > 0), None)
+            if first_pos_idx is None:
+                self.series_estimates[(sku, region)] = 0.0
+                continue
+
+            z = float(demands[first_pos_idx])
+            p = float(first_pos_idx + 1)
+            q = 1
+
+            for t in range(first_pos_idx + 1, len(demands)):
+                y_t = float(demands[t])
+                if y_t > 0:
+                    z = self.alpha * y_t + (1.0 - self.alpha) * z
+                    p = self.alpha * q + (1.0 - self.alpha) * p
+                    q = 1
+                else:
+                    q += 1
+
+            # SBA debiased rate: (1 - alpha / 2) * (z / p)
+            sba_rate = (1.0 - self.alpha / 2.0) * (z / p) if p > 0 else 0.0
+            self.series_estimates[(sku, region)] = float(max(0.0, sba_rate))
+
+        return self
+
+    def predict(self, sku_id: str, region: str, target_date: str) -> int:
+        """Predict non-negative integer demand."""
+        rate = self.series_estimates.get((sku_id, region), 0.0)
+        return int(round(max(0.0, rate)))
+
+
+class IntermittentChallengerModel:
+    """Intermittent Challenger Policy.
+
+    Applies Croston SBA on series classified as sporadic (intermittent or lumpy)
+    at origin, and dispatches to the pooled direct gradient boosted model elsewhere.
+    """
+
+    def __init__(self, random_state: int = 42, alpha: float = 0.1) -> None:
+        self.croston = CrostonSBAModel(alpha=alpha)
+        self.pooled = PooledDirectModel(random_state=random_state)
+        self.sporadic_series: set[Tuple[str, str]] = set()
+
+    def fit(self, history_df: pd.DataFrame, origin_date: str) -> IntermittentChallengerModel:
+        """Fit both underlying models and record sporadic classifications."""
+        self.croston.fit(history_df, origin_date)
+        self.pooled.fit(history_df, origin_date)
+
+        # Identify sporadic series (intermittent or lumpy)
+        as_of_df = history_df[history_df["Date"] <= origin_date].copy()
+        origin_feats = extract_origin_features(as_of_df, origin_date)
+        for (sku, reg), f in origin_feats.items():
+            if f.get("intermittency_class") in ["intermittent", "lumpy"]:
+                self.sporadic_series.add((sku, reg))
+
+        return self
+
+    def predict(self, sku_id: str, region: str, target_date: str, horizon: int = 1) -> int:
+        """Dispatch based on intermittency class."""
+        if (sku_id, region) in self.sporadic_series:
+            return self.croston.predict(sku_id, region, target_date)
+        return self.pooled.predict(sku_id, region, target_date, horizon)
