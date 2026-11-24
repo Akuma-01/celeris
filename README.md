@@ -80,7 +80,7 @@ The batch runner executes ingestion, cleaning, demand reconstruction, backtestin
 # Run against the synthetic fixture (end-to-end verified backtest and submission)
 python -m celeris run --data fixtures/data --out artifacts/fixture_run
 
-# Run against real student_data (reports missing history extract and safely halts)
+# Run against real student_data (end-to-end pipeline on full 248k row historical extract)
 python -m celeris run --data student_data --out artifacts/real_run
 ```
 
