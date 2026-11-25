@@ -102,16 +102,16 @@ All outputs are saved as typed Parquet tables and a validated submission CSV:
 
 | Published Artifact | Location | Grain & Description |
 |---|---|---|
-| `history.parquet` | `artifacts/fixture_run/` | Monthly panel per SKU-Region (2019-01 $\rightarrow$ 2026-10). Includes `is_observed`, `Units_Sold`, `reconstructed_demand`, `demand_evidence`, prices, and revenue. |
-| `quality.parquet` | `artifacts/fixture_run/` | Audit log of every data repair, timestamp deduplication, and label normalization. |
-| `anomalies.parquet` | `artifacts/fixture_run/` | Anomaly register: stockout shortages, backlog rebounds, genuine zeros, missing months, and lifecycle flags. |
-| `backtest.parquet` | `artifacts/fixture_run/` | 19-month rolling origin predictions across 3 folds for candidate models with row-level errors. |
-| `forecast.parquet` | `artifacts/fixture_run/` | 19-month unconstrained point forecast with lifecycle bounds, price projections, and projected revenue. |
-| `submission.csv` | `artifacts/fixture_run/` | Competition-ready submission: exactly `Date,SKU_ID,Region,Units_Sold_Forecast` in identical test key order. |
-| `macro_lead_lag.parquet` | `artifacts/fixture_run/` | Product-family macroeconomic cross-correlations across lags 0 to 12 with optimal leading indicator identification. |
-| `stockouts.parquet` | `artifacts/fixture_run/` | Cleaned stockout incident register with requested, shipped, backordered, carried, lost units and shortage root-causes. |
-| `sku_master.parquet` | `artifacts/fixture_run/` | Full product catalog metadata with lifecycle statuses, launch/EOL dates, and predecessor replacement links. |
-| `manifest.json` | `artifacts/fixture_run/` | Complete run metadata, input hashes, package versions, backtest metrics, and validation reports. |
+| `history.parquet` | `artifacts/real_run/` | Monthly panel per SKU-Region (2019-01 $\rightarrow$ 2026-10). Includes `is_observed`, `Units_Sold`, `reconstructed_demand`, `demand_evidence`, prices, and revenue. |
+| `quality.parquet` | `artifacts/real_run/` | Audit log of every data repair, timestamp deduplication, and label normalization. |
+| `anomalies.parquet` | `artifacts/real_run/` | Anomaly register: stockout shortages, backlog rebounds, genuine zeros, missing months, and lifecycle flags. |
+| `backtest.parquet` | `artifacts/real_run/` | 19-month rolling origin predictions across 3 folds for candidate models with row-level errors. |
+| `forecast.parquet` | `artifacts/real_run/` | 19-month unconstrained point forecast with lifecycle bounds, price projections, and projected revenue. |
+| `submission.csv` | `artifacts/real_run/` | Competition-ready submission: exactly `Date,SKU_ID,Region,Units_Sold_Forecast` in identical test key order. |
+| `macro_lead_lag.parquet` | `artifacts/real_run/` | Product-family macroeconomic cross-correlations across lags 0 to 12 with optimal leading indicator identification. |
+| `stockouts.parquet` | `artifacts/real_run/` | Cleaned stockout incident register with requested, shipped, backordered, carried, lost units and shortage root-causes. |
+| `sku_master.parquet` | `artifacts/real_run/` | Full product catalog metadata with lifecycle statuses, launch/EOL dates, and predecessor replacement links. |
+| `manifest.json` | `artifacts/real_run/` | Complete run metadata, input hashes, package versions, backtest metrics, and validation reports. |
 
 ---
 
@@ -171,4 +171,4 @@ The pipeline was executed against the authoritative 248,248-row historical extra
 | 13 | Advanced | **Hierarchical scoped events** | **PASSED** | `match_scoped_events` supports Global, Region, Family, Channel, and Customer scope matching. |
 | 14 | Advanced | **Dashboard View 6: Stockouts & Lost Sales** | **PASSED** | Unconstrained requested demand, shipments, backorders, lost sales, fill rate % timeline, and root-cause breakdown. |
 | 15 | Advanced | **Dashboard View 7: Lifecycle Planning** | **PASSED** | Catalog lifecycle phase distribution, Powertrain mix, predecessor-successor replacement links (`Replaces_SKU`), and cold-start forecast ramps. |
-| 16 | Real Data | **Real-data training & submission** | **PASSED** | Ingested 248,248 rows of historical transactions from `student_data/train.csv`, evaluated all 4 candidate models across 3 backtest folds, generated 58,219 final predictions in `submission.csv` (2,719,061 total units), and published all 9 artifacts to `artifacts/real_run/`. |
+| 16 | Real Data | **Real-data training & submission** | **PASSED** | Ingested 248,248 rows of historical transactions from `student_data/train.csv`, evaluated all 4 candidate models across 3 backtest folds, generated 58,219 final predictions in `submission.csv` (2,738,919 total units), and published all 9 artifacts to `artifacts/real_run/`. |
