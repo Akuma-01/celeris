@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd
 
 
+from celeris.clean import REGION_MAPPING, normalize_sku_id
+
+
 @dataclass
 class AnomalyRecord:
     """Entry in the anomaly register."""
@@ -117,13 +120,15 @@ def reconstruct_demand_and_anomalies(
     # Determine is_observed
     panel_df["is_observed"] = panel_df["Units_Sold"].notna()
 
-    # Prepare stockouts lookup
+    # Prepare stockouts lookup (with defensive Date, SKU_ID, and Region normalization)
     stockout_map: Dict[Tuple[str, str, str], dict] = {}
     if stockouts_df is not None and not stockouts_df.empty:
         s_df = stockouts_df.copy()
-        s_df["Date"] = s_df["Date"].astype(str).str.strip()
-        s_df["SKU_ID"] = s_df["SKU_ID"].astype(str).str.strip()
-        s_df["Region"] = s_df["Region"].astype(str).str.strip()
+        s_df["Date"] = pd.to_datetime(s_df["Date"].astype(str).str.strip(), format="mixed", errors="coerce").dt.strftime("%Y-%m").fillna(s_df["Date"].astype(str).str.strip())
+        canonical_skus = set(sku_metadata.keys()) if sku_metadata else None
+        s_df["SKU_ID"] = s_df["SKU_ID"].map(lambda v: normalize_sku_id(v, canonical_skus))
+        raw_reg = s_df["Region"].astype(str).str.strip()
+        s_df["Region"] = raw_reg.str.lower().map(REGION_MAPPING).fillna(raw_reg)
         for _, s_row in s_df.iterrows():
             key = (s_row["Date"], s_row["SKU_ID"], s_row["Region"])
             stockout_map[key] = s_row.to_dict()

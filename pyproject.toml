@@ -21,7 +21,3 @@ celeris = "celeris.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["celeris*"]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["tests"]

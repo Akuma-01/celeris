@@ -1,0 +1,452 @@
+{
+  "run_id": "run_20261125_182534_5dc764",
+  "run_timestamp": "2026-11-25T18:25:34.811386+00:00",
+  "run_mode": "real",
+  "is_fixture": false,
+  "data_dir": "/home/akuma/projects/hackathon/celeris/student_data",
+  "out_dir": "/home/akuma/projects/hackathon/celeris/artifacts/real_run",
+  "status": "SUCCESS",
+  "blocker": null,
+  "environment": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "pandas": "3.1.1",
+    "pyarrow": "26.0.1",
+    "streamlit": "1.67.0",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0"
+  },
+  "resolved_roles": {
+    "history": [
+      "train.csv"
+    ],
+    "forecast_rows": [
+      "test.csv"
+    ],
+    "sku_master": [
+      "sku_master.csv"
+    ],
+    "sample_submission": [
+      "sample_submission.csv"
+    ],
+    "macro_indicators": [
+      "macro_indicators.csv"
+    ],
+    "stockouts": [
+      "inventory_stockouts.csv"
+    ],
+    "events_calendar": [
+      "events_calendar.csv"
+    ]
+  },
+  "file_hashes": {
+    "events_calendar.csv": "bf45c00afcf946eee0339037348f930d847a55cc3f1cd2c461fdffb9eaf77942",
+    "inventory_stockouts.csv": "eaa92ac8336523b2f28e3c5684b67db2069f1191eefdb3725eb262fbd668cb3c",
+    "macro_indicators.csv": "f6fd249574436affbbdf07e56483899e4143307c5eb6f0a5e427c73a71ee0d26",
+    "sample_submission.csv": "1d12013567bb1d4373cf610db757f56e908d012326042252f9758effaca9247f",
+    "sku_master.csv": "95664b05e0b7d1a03f346b2ece5e0f2c420c12ec9acb461634ea6254c9816a98",
+    "test.csv": "25dc8d435f44a3fa34706f605c56aa75916a79895cadc33698c00934bd5df18e",
+    "train.csv": "2bfc753f147f61c65e701d003332833eb0a582540d9f0fb3d1fc43153c8a0bc4"
+  },
+  "diagnostics_summary": {
+    "missing_roles": [],
+    "scanned_file_count": 7,
+    "summary_notes": [
+      "Forecast rows resolved in test.csv: 58,219 rows covering 2026-11 to 2028-05 (19 months).",
+      "All seven dataset roles successfully resolved."
+    ],
+    "raw_history_rows": 248248,
+    "cleaned_history_rows": 243624,
+    "panel_history_rows": 289802,
+    "observed_rows": 243624,
+    "unobserved_missing_rows": 46178,
+    "quality_issues_logged": 8049,
+    "anomalies_logged": 88387,
+    "total_reconstructed_demand": 11742384.0,
+    "backtest_rows": 878655,
+    "leakage_check_passed": true,
+    "selected_winning_model": "ensemble",
+    "development_metrics": {
+      "seasonal_naive": {
+        "wape": 0.3979,
+        "signed_bias": -0.0544,
+        "total_actual": 5006979.0,
+        "total_forecast": 4734608.0,
+        "rows": 108901
+      },
+      "trailing_mean": {
+        "wape": 0.5559,
+        "signed_bias": -0.0702,
+        "total_actual": 5006979.0,
+        "total_forecast": 4655289.0,
+        "rows": 108901
+      },
+      "pooled_direct": {
+        "wape": 0.5176,
+        "signed_bias": -0.0925,
+        "total_actual": 5006979.0,
+        "total_forecast": 4543811.0,
+        "rows": 108901
+      },
+      "intermittent_challenger": {
+        "wape": 0.5487,
+        "signed_bias": -0.0133,
+        "total_actual": 5006979.0,
+        "total_forecast": 4940583.0,
+        "rows": 108901
+      },
+      "ensemble": {
+        "wape": 0.397,
+        "signed_bias": -0.0648,
+        "total_actual": 5006979.0,
+        "total_forecast": 4682305.0,
+        "rows": 108901
+      }
+    },
+    "frozen_holdout_metrics": {
+      "seasonal_naive": {
+        "wape": 0.3254,
+        "signed_bias": -0.0008,
+        "total_actual": 2677008.0,
+        "total_forecast": 2674761.0,
+        "rows": 57397
+      },
+      "trailing_mean": {
+        "wape": 0.5205,
+        "signed_bias": 0.0548,
+        "total_actual": 2677008.0,
+        "total_forecast": 2823664.0,
+        "rows": 57397
+      },
+      "pooled_direct": {
+        "wape": 0.4832,
+        "signed_bias": -0.0874,
+        "total_actual": 2677008.0,
+        "total_forecast": 2442906.0,
+        "rows": 57397
+      },
+      "intermittent_challenger": {
+        "wape": 0.4974,
+        "signed_bias": -0.0116,
+        "total_actual": 2677008.0,
+        "total_forecast": 2645845.0,
+        "rows": 57397
+      },
+      "ensemble": {
+        "wape": 0.3382,
+        "signed_bias": -0.0199,
+        "total_actual": 2677008.0,
+        "total_forecast": 2623812.0,
+        "rows": 57397
+      }
+    },
+    "submission_rows": 58219,
+    "submission_total_units": 2593751,
+    "submission_projected_revenue": 1986580780.1000001,
+    "submission_validation_passed": true,
+    "macro_leading_indicators": {
+      "Brake & Safety Systems": {
+        "best_indicator": "EV_Adoption_Index",
+        "best_lag": 0,
+        "correlation": 0.7153
+      },
+      "Chassis & Structural": {
+        "best_indicator": "EV_Adoption_Index",
+        "best_lag": 12,
+        "correlation": 0.766
+      },
+      "Electrical Assemblies": {
+        "best_indicator": "EV_Adoption_Index",
+        "best_lag": 0,
+        "correlation": 0.8179
+      },
+      "Hydraulic Systems": {
+        "best_indicator": "New_Vehicle_Orders_Index",
+        "best_lag": 1,
+        "correlation": 0.7687
+      },
+      "Powertrain Components": {
+        "best_indicator": "Industrial_Util_Rate_Pct",
+        "best_lag": 0,
+        "correlation": 0.7609
+      },
+      "Precision Machined Parts": {
+        "best_indicator": "Industrial_Util_Rate_Pct",
+        "best_lag": 0,
+        "correlation": 0.7838
+      },
+      "Thermal Management": {
+        "best_indicator": "Auto_Production_YoY_Pct",
+        "best_lag": 1,
+        "correlation": 0.6812
+      }
+    }
+  },
+  "metadata": {
+    "stage": "advanced_demand_planning_control_tower",
+    "tier": "Advanced",
+    "published_artifacts": {
+      "history": "artifacts/real_run/history.parquet",
+      "quality": "artifacts/real_run/quality.parquet",
+      "anomalies": "artifacts/real_run/anomalies.parquet",
+      "backtest": "artifacts/real_run/backtest.parquet",
+      "forecast": "artifacts/real_run/forecast.parquet",
+      "submission": "artifacts/real_run/submission.csv",
+      "macro_lead_lag": "artifacts/real_run/macro_lead_lag.parquet",
+      "stockouts": "artifacts/real_run/stockouts.parquet",
+      "sku_master": "artifacts/real_run/sku_master.parquet"
+    },
+    "backtest_summary": {
+      "development_metrics": {
+        "seasonal_naive": {
+          "wape": 0.3979,
+          "signed_bias": -0.0544,
+          "total_actual": 5006979.0,
+          "total_forecast": 4734608.0,
+          "rows": 108901
+        },
+        "trailing_mean": {
+          "wape": 0.5559,
+          "signed_bias": -0.0702,
+          "total_actual": 5006979.0,
+          "total_forecast": 4655289.0,
+          "rows": 108901
+        },
+        "pooled_direct": {
+          "wape": 0.5176,
+          "signed_bias": -0.0925,
+          "total_actual": 5006979.0,
+          "total_forecast": 4543811.0,
+          "rows": 108901
+        },
+        "intermittent_challenger": {
+          "wape": 0.5487,
+          "signed_bias": -0.0133,
+          "total_actual": 5006979.0,
+          "total_forecast": 4940583.0,
+          "rows": 108901
+        },
+        "ensemble": {
+          "wape": 0.397,
+          "signed_bias": -0.0648,
+          "total_actual": 5006979.0,
+          "total_forecast": 4682305.0,
+          "rows": 108901
+        }
+      },
+      "selected_winner": "ensemble",
+      "frozen_holdout_metrics": {
+        "seasonal_naive": {
+          "wape": 0.3254,
+          "signed_bias": -0.0008,
+          "total_actual": 2677008.0,
+          "total_forecast": 2674761.0,
+          "rows": 57397
+        },
+        "trailing_mean": {
+          "wape": 0.5205,
+          "signed_bias": 0.0548,
+          "total_actual": 2677008.0,
+          "total_forecast": 2823664.0,
+          "rows": 57397
+        },
+        "pooled_direct": {
+          "wape": 0.4832,
+          "signed_bias": -0.0874,
+          "total_actual": 2677008.0,
+          "total_forecast": 2442906.0,
+          "rows": 57397
+        },
+        "intermittent_challenger": {
+          "wape": 0.4974,
+          "signed_bias": -0.0116,
+          "total_actual": 2677008.0,
+          "total_forecast": 2645845.0,
+          "rows": 57397
+        },
+        "ensemble": {
+          "wape": 0.3382,
+          "signed_bias": -0.0199,
+          "total_actual": 2677008.0,
+          "total_forecast": 2623812.0,
+          "rows": 57397
+        }
+      },
+      "per_fold_metrics": {
+        "Fold_1": {
+          "seasonal_naive": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.4337,
+            "signed_bias": -0.0201,
+            "total_actual": 2346010.0,
+            "total_forecast": 2298874.0,
+            "scored_rows": 52893
+          },
+          "trailing_mean": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.592,
+            "signed_bias": -0.0551,
+            "total_actual": 2346010.0,
+            "total_forecast": 2216695.0,
+            "scored_rows": 52893
+          },
+          "pooled_direct": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.5535,
+            "signed_bias": 0.0363,
+            "total_actual": 2346010.0,
+            "total_forecast": 2431186.0,
+            "scored_rows": 52893
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.593,
+            "signed_bias": 0.1202,
+            "total_actual": 2346010.0,
+            "total_forecast": 2628088.0,
+            "scored_rows": 52893
+          },
+          "ensemble": {
+            "fold": "Fold_1",
+            "fold_type": "development",
+            "origin": "2022-01",
+            "wape": 0.4281,
+            "signed_bias": -0.0079,
+            "total_actual": 2346010.0,
+            "total_forecast": 2327553.0,
+            "scored_rows": 52893
+          }
+        },
+        "Fold_2": {
+          "seasonal_naive": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.3663,
+            "signed_bias": -0.0846,
+            "total_actual": 2660969.0,
+            "total_forecast": 2435734.0,
+            "scored_rows": 56008
+          },
+          "trailing_mean": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.5241,
+            "signed_bias": -0.0836,
+            "total_actual": 2660969.0,
+            "total_forecast": 2438594.0,
+            "scored_rows": 56008
+          },
+          "pooled_direct": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.4859,
+            "signed_bias": -0.2061,
+            "total_actual": 2660969.0,
+            "total_forecast": 2112625.0,
+            "scored_rows": 56008
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.5096,
+            "signed_bias": -0.131,
+            "total_actual": 2660969.0,
+            "total_forecast": 2312495.0,
+            "scored_rows": 56008
+          },
+          "ensemble": {
+            "fold": "Fold_2",
+            "fold_type": "development",
+            "origin": "2023-08",
+            "wape": 0.3695,
+            "signed_bias": -0.1151,
+            "total_actual": 2660969.0,
+            "total_forecast": 2354752.0,
+            "scored_rows": 56008
+          }
+        },
+        "Fold_3_Frozen_Holdout": {
+          "seasonal_naive": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.3254,
+            "signed_bias": -0.0008,
+            "total_actual": 2677008.0,
+            "total_forecast": 2674761.0,
+            "scored_rows": 57397
+          },
+          "trailing_mean": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.5205,
+            "signed_bias": 0.0548,
+            "total_actual": 2677008.0,
+            "total_forecast": 2823664.0,
+            "scored_rows": 57397
+          },
+          "pooled_direct": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.4832,
+            "signed_bias": -0.0874,
+            "total_actual": 2677008.0,
+            "total_forecast": 2442906.0,
+            "scored_rows": 57397
+          },
+          "intermittent_challenger": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.4974,
+            "signed_bias": -0.0116,
+            "total_actual": 2677008.0,
+            "total_forecast": 2645845.0,
+            "scored_rows": 57397
+          },
+          "ensemble": {
+            "fold": "Fold_3_Frozen_Holdout",
+            "fold_type": "frozen_holdout",
+            "origin": "2025-03",
+            "wape": 0.3382,
+            "signed_bias": -0.0199,
+            "total_actual": 2677008.0,
+            "total_forecast": 2623812.0,
+            "scored_rows": 57397
+          }
+        }
+      }
+    },
+    "submission_validation": {
+      "is_valid": true,
+      "total_rows": 58219,
+      "columns": [
+        "Date",
+        "SKU_ID",
+        "Region",
+        "Units_Sold_Forecast"
+      ],
+      "notes": [
+        "Column order matches exactly: Date, SKU_ID, Region, Units_Sold_Forecast",
+        "Row count verified: 58,219 rows",
+        "Key sequence and multiplicity match test file identically.",
+        "No nulls or blank values found.",
+        "100% value agreement between submission.csv and forecast.parquet."
+      ]
+    }
+  }
+}

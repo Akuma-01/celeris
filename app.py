@@ -350,7 +350,7 @@ def main():
                 .encode(x="Cutoff:N")
             )
 
-            st.altair_chart(line_chart + rule, use_container_width=True)
+            st.altair_chart(line_chart + rule, width="stretch")
         else:
             st.info("No timeline observations available for the current filter criteria.")
 
@@ -366,7 +366,7 @@ def main():
                 )
                 st.dataframe(
                     fam_mix.style.format({"Units_Sold_Forecast": "{:,}", "Projected_Revenue_USD": "${:,.2f}"}),
-                    use_container_width=True,
+                    width="stretch",
                 )
         with col_m2:
             st.markdown("#### Forecast Mix by Region")
@@ -378,7 +378,7 @@ def main():
                 )
                 st.dataframe(
                     reg_mix.style.format({"Units_Sold_Forecast": "{:,}", "Projected_Revenue_USD": "${:,.2f}"}),
-                    use_container_width=True,
+                    width="stretch",
                 )
 
     # VIEW 2: DATA HEALTH
@@ -414,7 +414,7 @@ def main():
                     "file_name", "source_row_id", "planning_key", "field",
                     "rule", "original_value", "cleaned_value", "decision", "reason"
                 ]],
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.info("No data quality repairs logged.")
@@ -473,11 +473,11 @@ def main():
                     )
                     .properties(height=340)
                 )
-                st.altair_chart(chart, use_container_width=True)
+                st.altair_chart(chart, width="stretch")
 
             st.dataframe(
                 sku_df[["Date", "Units_Sold", "reconstructed_demand", "demand_evidence", "is_observed", "Unit_Price_USD", "Revenue_USD"]],
-                use_container_width=True,
+                width="stretch",
             )
 
             # Macroeconomic Leading Drivers for this Product Family
@@ -521,7 +521,7 @@ def main():
                     "Date", "SKU_ID", "Region", "anomaly_type", "description",
                     "original_value", "cleaned_value", "action", "reason", "linked_evidence"
                 ]],
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.info("No anomalies recorded for the current filter selection.")
@@ -564,7 +564,7 @@ def main():
                     })
 
             if summary_rows:
-                st.dataframe(pd.DataFrame(summary_rows), use_container_width=True)
+                st.dataframe(pd.DataFrame(summary_rows), width="stretch")
 
                 st.markdown("---")
                 st.subheader("Backtest Origin Deep-Dive (Predicted vs Realized Demand)")
@@ -591,7 +591,7 @@ def main():
                             )
                             .properties(height=360)
                         )
-                        st.altair_chart(b_chart, use_container_width=True)
+                        st.altair_chart(b_chart, width="stretch")
             else:
                 st.info("No backtest predictions match the selected filter criteria.")
 
@@ -603,7 +603,7 @@ def main():
                 "Units_Sold_Forecast", "Unit_Price_USD", "Projected_Revenue_USD",
                 "Model_Or_Fallback", "Lifecycle_Status"
             ]],
-            use_container_width=True,
+            width="stretch",
         )
 
     # VIEW 6: STOCKOUTS & LOST SALES (Advanced View 1)
@@ -660,7 +660,7 @@ def main():
                     )
                     .properties(height=320)
                 )
-                st.altair_chart(c_stk, use_container_width=True)
+                st.altair_chart(c_stk, width="stretch")
 
             col_a, col_b = st.columns(2)
             with col_a:
@@ -676,7 +676,7 @@ def main():
                         )
                         .properties(height=260)
                     )
-                    st.altair_chart(fr_chart, use_container_width=True)
+                    st.altair_chart(fr_chart, width="stretch")
 
             with col_b:
                 st.subheader("Root-Cause Reason Distribution")
@@ -693,11 +693,11 @@ def main():
                         )
                         .properties(height=260)
                     )
-                    st.altair_chart(r_chart, use_container_width=True)
+                    st.altair_chart(r_chart, width="stretch")
 
             st.markdown("---")
             st.subheader("Stockout Incident Register (`stockouts.parquet`)")
-            st.dataframe(stockouts_df, use_container_width=True)
+            st.dataframe(stockouts_df, width="stretch")
         else:
             st.info("No stockout incidents match the current filters.")
 
@@ -743,7 +743,7 @@ def main():
                         )
                         .properties(height=280)
                     )
-                    st.altair_chart(ls_chart, use_container_width=True)
+                    st.altair_chart(ls_chart, width="stretch")
 
             with col_l2:
                 st.subheader("Powertrain Application Mix")
@@ -760,7 +760,7 @@ def main():
                         )
                         .properties(height=280)
                     )
-                    st.altair_chart(pt_chart, use_container_width=True)
+                    st.altair_chart(pt_chart, width="stretch")
 
             st.markdown("---")
             st.subheader("Predecessor-Successor Cold Start Transition Ramp")
@@ -795,13 +795,13 @@ def main():
                         )
                         .properties(height=320)
                     )
-                    st.altair_chart(ramp_chart, use_container_width=True)
+                    st.altair_chart(ramp_chart, width="stretch")
             else:
                 st.caption("No replacement links found in current filtered catalog.")
 
             st.markdown("---")
             st.subheader("SKU Master Catalog (`sku_master.parquet`)")
-            st.dataframe(sku_master, use_container_width=True)
+            st.dataframe(sku_master, width="stretch")
         else:
             st.info("No SKU master data found.")
 

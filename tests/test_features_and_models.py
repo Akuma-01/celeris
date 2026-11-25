@@ -109,7 +109,7 @@ def test_backtest_execution_and_selection(fixture_data_dir: Path, tmp_path: Path
     # Verify summary metrics
     summary = res.backtest_summary
     assert summary is not None
-    assert summary["selected_winner"] in ["seasonal_naive", "trailing_mean", "pooled_direct", "intermittent_challenger"]
+    assert summary["selected_winner"] in ["seasonal_naive", "trailing_mean", "pooled_direct", "intermittent_challenger", "ensemble"]
     assert "development_metrics" in summary
     assert "frozen_holdout_metrics" in summary
 

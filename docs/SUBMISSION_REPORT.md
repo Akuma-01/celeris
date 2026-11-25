@@ -5,7 +5,7 @@
 **Evaluation Period**: 19-Month Forecast Horizon (November 2026 – May 2028)  
 **Historical Scope**: January 2019 – October 2026 (94 Monthly Periods, 248,248 Transactions)  
 **Catalog Scope**: ~600 SKUs, 7 Product Families, 6 Global Sales Regions  
-**Winning Model Holdout Accuracy**: **40.77% WAPE** (Frozen Holdout Fold 3, Bias: **-1.38%**)  
+**Winning Model Holdout Accuracy**: **33.82% WAPE** (`ensemble` winner selected on Dev WAPE **39.70%**; constituent `seasonal_naive` achieves **32.54% WAPE**, Bias **-0.08%**)  
 
 ---
 
@@ -74,7 +74,7 @@ The platform automatically discovers and ingests multi-source data, reconstructs
                                                  v
 +----------------------------------------------------------------------------------------------------+
 |  5. Final Publication & Delivery (celeris.publish)                                                 |
-|     - Winning Model Selection: Seasonal Naive (Multi-Cycle Smoothed) [40.77% Holdout WAPE]         |
+|     - Winning Model Selection: Ensemble Blend (39.70% Dev WAPE / 33.82% Holdout WAPE)                 |
 |     - Point Forecast Generation: 58,219 keys (2026-11 to 2028-05)                                  |
 |     - Authoritative submission.csv: exactly 58,219 rows, 4 columns, 0 nulls, integer units         |
 |     - Parquet Data Lake: forecast, history, quality, anomalies, backtest, macro, stockouts, master |
@@ -196,15 +196,16 @@ Evaluating across all 595 SKUs and 6 sales regions on the complete 248,248 trans
 
 | Model Architecture | Dev WAPE (Folds 1 & 2) | Dev Signed Bias | Frozen Holdout WAPE (Fold 3) | Frozen Holdout Bias | Decision |
 |---|---|---|---|---|---|
-| **Seasonal Naïve (Multi-Cycle Smoothed)** | **46.75%** | **-6.99%** | **40.77%** | **-1.38%** | **AUTHORITATIVE WINNER** |
-| Pooled Direct (L1 GBDT) | 54.52% | -13.20% | 51.92% | -12.75% | Strong Challenger |
-| Intermittent Challenger (Croston SBA) | 57.84% | -4.46% | 53.97% | -3.90% | Specialized Challenger |
-| Trailing Mean Baseline | 61.27% | -8.18% | 59.24% | +4.53% | Rejected Baseline |
+| **Ensemble Blend (70% Seasonal Naïve / 25% Pooled / 5% Mean)** | **39.70%** | **-6.48%** | **33.82%** | **-1.99%** | **AUTHORITATIVE WINNER** |
+| Seasonal Naïve (Multi-Cycle Smoothed) | 39.79% | -5.44% | **32.54%** | **-0.08%** | Strongest Seasonal Component |
+| Pooled Direct (L1 GBDT) | 51.76% | -9.25% | 48.32% | -8.74% | Strong ML Challenger |
+| Intermittent Challenger (Croston SBA) | 54.87% | -1.33% | 49.74% | -1.16% | Specialized Challenger |
+| Trailing Mean Baseline | 55.59% | -7.02% | 52.05% | +5.48% | Rejected Baseline |
 
 ### 5.3 Key Evaluation Insights
-1. **Generalization Superiority**: `Seasonal Naïve (Multi-Cycle Smoothed)` achieved **40.77% WAPE** on the 19-month Frozen Holdout, outperforming the pooled machine learning model by **11.15 percentage points** and the baseline by **18.47 percentage points**.
-2. **Minimal Forecasting Bias**: On the holdout period, the winning model achieved an almost perfect **-1.38% signed bias**, ensuring operations neither starve the supply chain nor accumulate excess inventory.
-3. **Leakage Safety Verification**: Our automated verification suite (`verify_leakage_safety`) injects random synthetic perturbations into future data ($t > T_{\text{origin}}$). In 100% of trials, fitted models and predicted vectors remained bitwise identical, proving zero future data leakage.
+1. **Hardened Cleaning + Generalization Superiority**: After fixing multi-format ERP dates (`8,325` rows), unpadded/unhyphenated `SKU_ID`s (`2,992` rows), dash zeros, negative sign reversals, missing-unit recovery (`2,907` rows), cents-to-dollars price errors, and 10x unit-scale typos, `Ensemble Blend` won development selection (**39.70% Dev WAPE**, **33.82% Frozen Holdout WAPE**), and multi-cycle `Seasonal Naïve` hit **32.54% Frozen Holdout WAPE** (-0.08% bias) — outperforming the pooled ML model by **15.78 percentage points** on holdout.
+2. **Minimal Forecasting Bias**: On the holdout period, `ensemble` achieved **-1.99% signed bias** (`seasonal_naive` **-0.08%**), ensuring operations neither starve the supply chain nor accumulate excess inventory.
+3. **Leakage Safety Verification**: Our automated verification suite (`verify_leakage_safety`) injects random synthetic perturbations into future data ($t > T_{\text{origin}}$). In 100% of trials, fitted models and predicted vectors across all 5 candidates remained bitwise identical, proving zero future data leakage.
 
 ---
 
@@ -215,21 +216,21 @@ The published submission in `artifacts/real_run/submission.csv` adheres strictly
 - **Total Rows**: Exactly `58,219` (matches `test.csv` row-for-row in identical sequence).
 - **Columns**: Exactly 4 columns: `Date`, `SKU_ID`, `Region`, `Units_Sold_Forecast`.
 - **Data Integrity**: 0 nulls, 0 NaN values, 0 infinite values.
-- **Value Constraints**: Strictly non-negative integers (`min = 0`, `max = 6,430`).
-- **Aggregate Volume**: 2,738,919 forecasted units across the 19-month horizon.
-- **Projected Revenue**: $2,114,056,492.26.
+- **Value Constraints**: Strictly non-negative integers (`min = 0`, `max = 951`).
+- **Aggregate Volume**: 2,593,751 forecasted units across the 19-month horizon.
+- **Projected Revenue**: $1,986,580,780.10.
 
 ### 6.2 Data Lake Parquet Inventory
 All published artifacts are stored in `artifacts/real_run/`:
-- `forecast.parquet` (424 KB): 58,219 forecast rows with confidence tiers, base prices, and projected revenue.
-- `history.parquet` (2.53 MB): 535,142 monthly panel rows with observed sales, unconstrained demand, and flags.
-- `quality.parquet` (568 KB): Audit trail of all deduplicated records, normalized regions, and repairs.
-- `anomalies.parquet` (5.85 MB): Complete incident log of stockouts, backlog carry-ins, and disruptions.
-- `backtest.parquet` (5.77 MB): Full row-level rolling backtest evaluation for all models across all 3 folds.
-- `macro_lead_lag.parquet` (11.5 KB): Cross-correlations and optimal lag offsets (0–12 months) per product family.
-- `stockouts.parquet` (55.4 KB): Cleaned stockout ledger with requested, shipped, carried, and lost sales.
-- `sku_master.parquet` (18.5 KB): Product catalog master with launch/EOL dates and predecessor replacement links.
-- `manifest.json` (13.1 KB): Cryptographic SHA-256 hashes, dependency versions, and execution telemetry.
+- `forecast.parquet` (423 KB): 58,219 forecast rows with confidence tiers, base prices, and projected revenue.
+- `history.parquet` (2.2 MB): 289,802 canonical monthly panel rows (`243,624` observed, `46,178` unobserved gaps) with observed sales, unconstrained demand, and evidence flags.
+- `quality.parquet` (450 KB): Audit trail of all deduplicated records, normalized dates/SKUs/regions, recovered units, scale/cents repairs, and revenue reconciliations.
+- `anomalies.parquet` (1.9 MB): Complete incident log of stockouts, backlog carry-ins, genuine zeros, missing months, and lifecycle flags.
+- `backtest.parquet` (3.9 MB): Full row-level rolling backtest evaluation for all 5 models across all 3 folds.
+- `macro_lead_lag.parquet` (12 KB): Cross-correlations and optimal lag offsets (0–12 months) per product family.
+- `stockouts.parquet` (55 KB): Cleaned stockout ledger with requested, shipped, carried, and lost sales.
+- `sku_master.parquet` (19 KB): Product catalog master with launch/EOL dates and predecessor replacement links.
+- `manifest.json` (14 KB): Cryptographic SHA-256 hashes, dependency versions, and execution telemetry.
 
 ---
 
@@ -256,7 +257,7 @@ source .venv/bin/activate
 # 2. Verify Packaging Installation
 pip install -e .
 
-# 3. Execute Automated Test Suite (38 unit & integration tests)
+# 3. Execute Automated Test Suite (41 unit & integration tests)
 pytest -v
 
 # 4. Run Pipeline from Scratch (Student Data)
@@ -270,4 +271,4 @@ streamlit run app.py
 
 ## 9. Conclusion
 
-The Celeris Demand Forecasting & Planning Control Tower bridges the gap between raw, messy industrial supply chain data and actionable executive decisions. By combining self-healing ingestion, mathematically rigorous unconstrained demand reconstruction, $L_1$ loss optimization, multi-cycle seasonal exponential smoothing, and an interactive 7-view dashboard, Celeris achieves an outstanding **40.77% holdout WAPE** while ensuring 100% compliance with production constraints.
+The Celeris Demand Forecasting & Planning Control Tower bridges the gap between raw, messy industrial supply chain data and actionable executive decisions. By combining self-healing ingestion, multi-format ERP data cleansing, mathematically rigorous unconstrained demand reconstruction, $L_1$ loss optimization, multi-cycle seasonal smoothing, and an interactive 7-view dashboard, Celeris achieves **39.70% development WAPE** and **33.82% holdout WAPE** (`ensemble` winner; **32.54%** / **-0.08% bias** on `seasonal_naive`) while ensuring 100% compliance with production constraints.

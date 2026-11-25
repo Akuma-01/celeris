@@ -130,14 +130,15 @@ The pipeline was executed against the authoritative 248,248-row historical extra
 
 | Model Candidate | Development WAPE (Folds 1 & 2) | Development Signed Bias | Frozen Holdout WAPE (Fold 3) | Frozen Holdout Signed Bias | Status |
 |---|---|---|---|---|---|
-| **Seasonal Naïve (Multi-Cycle Smoothed)** | **46.75%** | **-6.99%** | **40.77%** | **-1.38%** | **Winner (Selected)** |
-| Pooled Direct (L1 Absolute Error Loss) | 54.52% | -13.20% | 51.92% | -12.75% | Challenger 1 |
-| Intermittent Challenger (Croston SBA) | 57.84% | -4.46% | 53.97% | -3.90% | Advanced Challenger |
-| Trailing Mean | 61.27% | -8.18% | 59.24% | +4.53% | Baseline |
+| **Ensemble Blend (70% Seasonal Naïve / 25% Pooled / 5% Mean)** | **39.70%** | **-6.48%** | **33.82%** | **-1.99%** | **Winner (Selected)** |
+| Seasonal Naïve (Multi-Cycle Smoothed) | 39.79% | -5.44% | **32.54%** | **-0.08%** | Challenger 1 |
+| Pooled Direct (L1 Absolute Error Loss) | 51.76% | -9.25% | 48.32% | -8.74% | Challenger 2 |
+| Intermittent Challenger (Croston SBA) | 54.87% | -1.33% | 49.74% | -1.16% | Advanced Challenger |
+| Trailing Mean | 55.59% | -7.02% | 52.05% | +5.48% | Baseline |
 
-- **Winning Model**: Upgraded `seasonal_naive` with multi-cycle exponential smoothing (60% $t-12$, 25% $t-24$, 15% $t-36$) achieved an outstanding **40.77% WAPE** on the 19-month Frozen Holdout (Fold 3).
+- **Winning Model**: `ensemble` (70% multi-cycle `seasonal_naive`, 25% L1 `pooled_direct`, 5% `trailing_mean`) achieved **39.70% Development WAPE** and **33.82% Frozen Holdout WAPE** (-1.99% bias), while constituent `seasonal_naive` reached **32.54% Frozen Holdout WAPE** (-0.08% bias) after hardening ERP date, SKU, unit-scale, and cents-price cleaning.
 - **Published Submission**: 58,219 forecast rows in `artifacts/real_run/submission.csv` (100% format contract compliance, zero nulls, non-negative integers).
-- **Aggregate Forecast**: 2,738,919 total units forecasted, generating $2,114,056,492.26 in projected revenue.
+- **Aggregate Forecast**: 2,593,751 total units forecasted, generating $1,986,580,780.10 in projected revenue.
 
 #### Synthetic Fixture Validation Benchmark (`fixtures/data/`)
 
@@ -171,4 +172,4 @@ The pipeline was executed against the authoritative 248,248-row historical extra
 | 13 | Advanced | **Hierarchical scoped events** | **PASSED** | `match_scoped_events` supports Global, Region, Family, Channel, and Customer scope matching. |
 | 14 | Advanced | **Dashboard View 6: Stockouts & Lost Sales** | **PASSED** | Unconstrained requested demand, shipments, backorders, lost sales, fill rate % timeline, and root-cause breakdown. |
 | 15 | Advanced | **Dashboard View 7: Lifecycle Planning** | **PASSED** | Catalog lifecycle phase distribution, Powertrain mix, predecessor-successor replacement links (`Replaces_SKU`), and cold-start forecast ramps. |
-| 16 | Real Data | **Real-data training & submission** | **PASSED** | Ingested 248,248 rows of historical transactions from `student_data/train.csv`, evaluated all 4 candidate models across 3 backtest folds, generated 58,219 final predictions in `submission.csv` (2,738,919 total units), and published all 9 artifacts to `artifacts/real_run/`. |
+| 16 | Real Data | **Real-data training & submission** | **PASSED** | Ingested 248,248 rows of historical transactions from `student_data/train.csv`, evaluated all 5 candidate models across 3 backtest folds, generated 58,219 final predictions in `submission.csv` (2,593,751 total units), and published all 9 artifacts to `artifacts/real_run/`. |

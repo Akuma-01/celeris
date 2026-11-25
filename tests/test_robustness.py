@@ -168,3 +168,95 @@ def test_filter_dataframe_empty_cases():
     # "All" returns unfiltered
     unfiltered = filter_dataframe(df, {"Region": ["All"]})
     assert len(unfiltered) == 2
+
+
+def test_clean_advanced_erp_repairs():
+    """Verify multi-format dates, SKU normalization, dash/comma units, sign flips, cents prices, and scale errors."""
+    sku_master = pd.DataFrame([
+        {"SKU_ID": "BSS-001", "Product_Family": "Brake", "Business_Unit": "Safety"},
+        {"SKU_ID": "BSS-010", "Product_Family": "Brake", "Business_Unit": "Safety"},
+        {"SKU_ID": "ELA-062", "Product_Family": "Electronics", "Business_Unit": "EV"},
+    ])
+    dirty_df = pd.DataFrame([
+        # 1. Mixed date 'Apr 2024', padded SKU 'BSS-10', comma units '1,060'
+        {
+            "Record_ID": "R1", "Date": "Apr 2024", "Year": 2024, "Month": 4,
+            "SKU_ID": "BSS-10", "Region": "EU", "Units_Sold": "1,060",
+            "Unit_Price_USD": 100.0, "Revenue_USD": 106000.0, "Load_Timestamp": "2024-04-05",
+        },
+        # 2. Typo year '2062-01' with Year=2026 + missing hyphen 'ELA062' + cents price (100x)
+        {
+            "Record_ID": "R2", "Date": "2062-01", "Year": 2026, "Month": 1,
+            "SKU_ID": "ELA062", "Region": "APAC", "Units_Sold": "15",
+            "Unit_Price_USD": 20000.0, "Revenue_USD": 3000.0, "Load_Timestamp": "2026-01-05",
+        },
+        # 3. Clean reference price row for ELA-062 in 2026 ($200.00)
+        {
+            "Record_ID": "R3", "Date": "2026/02", "Year": 2026, "Month": 2,
+            "SKU_ID": "ELA-062", "Region": "India", "Units_Sold": "10",
+            "Unit_Price_USD": 200.0, "Revenue_USD": 2000.0, "Load_Timestamp": "2026-02-05",
+        },
+        # 4. Another clean reference row so median price for (ELA-062, 2026) is 200.0
+        {
+            "Record_ID": "R4", "Date": "2026-03", "Year": 2026, "Month": 3,
+            "SKU_ID": "ELA-062", "Region": "Europe", "Units_Sold": "20",
+            "Unit_Price_USD": 200.0, "Revenue_USD": 4000.0, "Load_Timestamp": "2026-03-05",
+        },
+        # 5. Dash '-' zero order
+        {
+            "Record_ID": "R5", "Date": "01-2024", "Year": 2024, "Month": 1,
+            "SKU_ID": "BSS-001", "Region": "India", "Units_Sold": "-",
+            "Unit_Price_USD": 0.0, "Revenue_USD": 0.0, "Load_Timestamp": "2024-01-05",
+        },
+        # 6. Negative sign reversal typo
+        {
+            "Record_ID": "R6", "Date": "2024-02", "Year": 2024, "Month": 2,
+            "SKU_ID": "BSS-001", "Region": "India", "Units_Sold": "-42",
+            "Unit_Price_USD": 50.0, "Revenue_USD": -2100.0, "Load_Timestamp": "2024-02-05",
+        },
+        # 7. Missing Units_Sold recovered from Revenue / Price
+        {
+            "Record_ID": "R7", "Date": "2024-03", "Year": 2024, "Month": 3,
+            "SKU_ID": "BSS-001", "Region": "India", "Units_Sold": None,
+            "Unit_Price_USD": 50.0, "Revenue_USD": 1500.0, "Load_Timestamp": "2024-03-05",
+        },
+        # 8. 10x Unit scale typo (500 entered instead of 50)
+        {
+            "Record_ID": "R8", "Date": "2026-04", "Year": 2026, "Month": 4,
+            "SKU_ID": "ELA-062", "Region": "Europe", "Units_Sold": "500",
+            "Unit_Price_USD": 200.0, "Revenue_USD": 10000.0, "Load_Timestamp": "2026-04-05",
+        },
+    ])
+
+    cleaned_df, quality = clean_history_transactions(dirty_df, sku_master_df=sku_master)
+    by_id = cleaned_df.set_index("Record_ID")
+
+    assert by_id.loc["R1", "Date"] == "2024-04"
+    assert by_id.loc["R1", "SKU_ID"] == "BSS-010"
+    assert by_id.loc["R1", "Units_Sold"] == 1060.0
+
+    assert by_id.loc["R2", "Date"] == "2026-01"
+    assert by_id.loc["R2", "SKU_ID"] == "ELA-062"
+    assert by_id.loc["R2", "Unit_Price_USD"] == 200.0
+
+    assert by_id.loc["R3", "Date"] == "2026-02"
+    assert by_id.loc["R5", "Date"] == "2024-01"
+    assert by_id.loc["R5", "Units_Sold"] == 0.0
+
+    assert by_id.loc["R6", "Units_Sold"] == 42.0
+    assert by_id.loc["R6", "Revenue_USD"] == 2100.0
+
+    assert by_id.loc["R7", "Units_Sold"] == 30.0
+    assert by_id.loc["R8", "Units_Sold"] == 50.0
+
+    rules = {q.rule for q in quality}
+    assert {
+        "date_format_normalization",
+        "sku_id_normalization",
+        "dash_zero_normalization",
+        "comma_numeric_normalization",
+        "negative_sign_reversal_repair",
+        "cents_to_dollars_price_repair",
+        "recovered_units_from_revenue",
+        "unit_scale_error_repair",
+    }.issubset(rules)

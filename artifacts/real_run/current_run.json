@@ -1,7 +1,7 @@
 {
-  "current_run_id": "run_20261124_124852_ae251f",
+  "current_run_id": "run_20261125_182534_5dc764",
   "run_mode": "real",
-  "timestamp": "2026-11-24T12:48:52.720074+00:00",
+  "timestamp": "2026-11-25T18:25:34.811386+00:00",
   "manifest": "artifacts/real_run/manifest.json",
   "published_artifacts": {
     "history": "artifacts/real_run/history.parquet",
