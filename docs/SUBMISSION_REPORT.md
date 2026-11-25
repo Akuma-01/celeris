@@ -218,7 +218,7 @@ The published submission in `artifacts/real_run/submission.csv` adheres strictly
 - **Data Integrity**: 0 nulls, 0 NaN values, 0 infinite values.
 - **Value Constraints**: Strictly non-negative integers (`min = 0`, `max = 951`).
 - **Aggregate Volume**: 2,593,751 forecasted units across the 19-month horizon.
-- **Projected Revenue**: $1,986,580,780.10.
+- **Projected Revenue**: $2,041,117,938.38 (reflecting 4.5% Jan 2027 and 4.0% Jan 2028 list-price changes from `events_calendar.csv`).
 
 ### 6.2 Data Lake Parquet Inventory
 All published artifacts are stored in `artifacts/real_run/`:
@@ -257,7 +257,7 @@ source .venv/bin/activate
 # 2. Verify Packaging Installation
 pip install -e .
 
-# 3. Execute Automated Test Suite (41 unit & integration tests)
+# 3. Execute Automated Test Suite (43 unit & integration tests)
 pytest -v
 
 # 4. Run Pipeline from Scratch (Student Data)

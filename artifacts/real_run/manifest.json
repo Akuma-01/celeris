@@ -1,6 +1,6 @@
 {
-  "run_id": "run_20261125_182534_5dc764",
-  "run_timestamp": "2026-11-25T18:25:34.811386+00:00",
+  "run_id": "run_20261125_185005_4ae70b",
+  "run_timestamp": "2026-11-25T18:50:06.198950+00:00",
   "run_mode": "real",
   "is_fixture": false,
   "data_dir": "/home/akuma/projects/hackathon/celeris/student_data",
@@ -142,38 +142,38 @@
     },
     "submission_rows": 58219,
     "submission_total_units": 2593751,
-    "submission_projected_revenue": 1986580780.1000001,
+    "submission_projected_revenue": 2041117938.3799999,
     "submission_validation_passed": true,
     "macro_leading_indicators": {
       "Brake & Safety Systems": {
         "best_indicator": "EV_Adoption_Index",
         "best_lag": 0,
-        "correlation": 0.7153
+        "correlation": 0.7179
       },
       "Chassis & Structural": {
         "best_indicator": "EV_Adoption_Index",
-        "best_lag": 12,
-        "correlation": 0.766
+        "best_lag": 11,
+        "correlation": 0.7692
       },
       "Electrical Assemblies": {
         "best_indicator": "EV_Adoption_Index",
         "best_lag": 0,
-        "correlation": 0.8179
+        "correlation": 0.8208
       },
       "Hydraulic Systems": {
         "best_indicator": "New_Vehicle_Orders_Index",
         "best_lag": 1,
-        "correlation": 0.7687
+        "correlation": 0.7685
       },
       "Powertrain Components": {
         "best_indicator": "Industrial_Util_Rate_Pct",
         "best_lag": 0,
-        "correlation": 0.7609
+        "correlation": 0.7604
       },
       "Precision Machined Parts": {
         "best_indicator": "Industrial_Util_Rate_Pct",
         "best_lag": 0,
-        "correlation": 0.7838
+        "correlation": 0.7809
       },
       "Thermal Management": {
         "best_indicator": "Auto_Production_YoY_Pct",

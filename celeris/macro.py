@@ -72,7 +72,9 @@ def analyze_macro_lead_lag(
 
         for ind in available_indicators:
             family_corrs[ind] = {}
-            ind_series = m_df.set_index("Date")[ind].astype(float)
+            ind_series = pd.to_numeric(m_df.set_index("Date")[ind], errors="coerce").astype(float)
+            # Bounded, past-only 1-month carry-forward for isolated indicator gaps
+            ind_series = ind_series.ffill(limit=1)
 
             for lag in range(max_lag + 1):
                 # Shift indicator forward by lag months

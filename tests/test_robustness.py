@@ -15,7 +15,7 @@ from celeris.forecast import (
     IntermittentChallengerModel,
     EnsembleModel,
 )
-from celeris.publish import derive_submission, validate_submission
+from celeris.publish import compute_price_multiplier, derive_submission, validate_submission
 from celeris.macro import analyze_macro_lead_lag, match_scoped_events
 from app import filter_dataframe
 
@@ -260,3 +260,30 @@ def test_clean_advanced_erp_repairs():
         "recovered_units_from_revenue",
         "unit_scale_error_repair",
     }.issubset(rules)
+
+
+def test_event_driven_price_multiplier_and_macro_ffill():
+    """Verify event-driven list-price/surcharge multipliers and bounded 1-month macro carry-forward."""
+    events = pd.DataFrame([
+        {"Event_ID": "E1", "Start_Date": "2027-01", "End_Date": "2027-01", "Scope_Type": "Global", "Event_Type": "Price Change", "Description": "Annual list-price increase of about 4.5% effective 1 January"},
+        {"Event_ID": "E2", "Start_Date": "2028-01", "End_Date": "2028-01", "Scope_Type": "Global", "Event_Type": "Price Change", "Description": "Annual list-price increase of about 4.0% effective 1 January"},
+        {"Event_ID": "E3", "Start_Date": "2027-07", "End_Date": "2027-09", "Scope_Type": "Global", "Event_Type": "Price Change", "Description": "Temporary 6% surcharge"},
+    ])
+    assert round(compute_price_multiplier("2026-12", "2026-10", events), 6) == 1.0
+    assert round(compute_price_multiplier("2027-02", "2026-10", events), 6) == 1.045
+    assert round(compute_price_multiplier("2027-08", "2026-10", events), 6) == round(1.045 * 1.06, 6)
+    assert round(compute_price_multiplier("2028-02", "2026-10", events), 6) == round(1.045 * 1.04, 6)
+
+    # Single-month macro gap should carry forward (limit=1) without failing correlation
+    dates = [f"2020-{m:02d}" for m in range(1, 13)]
+    vals = [float(40 + m) for m in range(1, 13)]
+    vals[5] = np.nan  # isolated single-month missing value
+    macro_df = pd.DataFrame({"Date": dates, "ISM_Manufacturing_PMI": vals})
+    history_df = pd.DataFrame({
+        "Date": dates,
+        "Product_Family": ["Family_A"] * 12,
+        "reconstructed_demand": [float(100 + 10 * m) for m in range(1, 13)],
+    })
+    res = analyze_macro_lead_lag(history_df, macro_df)["Family_A"]
+    assert res.best_indicator == "ISM_Manufacturing_PMI"
+    assert res.correlation > 0.95

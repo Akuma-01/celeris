@@ -120,3 +120,23 @@ def test_real_run_artifacts_loading_and_reconciliation():
     assert len(forecast_df) == 58219
     sub_df = pd.read_csv("artifacts/real_run/submission.csv")
     assert int(forecast_df["Units_Sold_Forecast"].sum()) == int(sub_df["Units_Sold_Forecast"].sum())
+
+
+def test_dashboard_all_seven_views_render_cleanly():
+    """Verify all 7 Streamlit control tower views render with zero exceptions and zero deprecation warnings."""
+    import warnings
+    from streamlit.testing.v1 import AppTest
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        app_path = Path(__file__).resolve().parent.parent / "app.py"
+        at = AppTest.from_file(app_path, default_timeout=30)
+        at.run()
+        assert not at.exception
+        view_radio = at.sidebar.radio[0]
+        assert len(view_radio.options) == 7
+        for opt in view_radio.options:
+            view_radio.set_value(opt).run()
+            assert not at.exception
+        app_deprecations = [w for w in caught if "app.py" in (w.filename or "")]
+        assert len(app_deprecations) == 0

@@ -138,7 +138,7 @@ The pipeline was executed against the authoritative 248,248-row historical extra
 
 - **Winning Model**: `ensemble` (70% multi-cycle `seasonal_naive`, 25% L1 `pooled_direct`, 5% `trailing_mean`) achieved **39.70% Development WAPE** and **33.82% Frozen Holdout WAPE** (-1.99% bias), while constituent `seasonal_naive` reached **32.54% Frozen Holdout WAPE** (-0.08% bias) after hardening ERP date, SKU, unit-scale, and cents-price cleaning.
 - **Published Submission**: 58,219 forecast rows in `artifacts/real_run/submission.csv` (100% format contract compliance, zero nulls, non-negative integers).
-- **Aggregate Forecast**: 2,593,751 total units forecasted, generating $1,986,580,780.10 in projected revenue.
+- **Aggregate Forecast**: 2,593,751 total units forecasted, generating $2,041,117,938.38 in projected revenue (incorporating documented 4.5% Jan 2027 and 4.0% Jan 2028 list-price increases from `events_calendar.csv`).
 
 #### Synthetic Fixture Validation Benchmark (`fixtures/data/`)
 

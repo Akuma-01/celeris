@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
@@ -43,16 +44,75 @@ def compute_horizon(forecast_date: str, cutoff_date: str = "2026-10") -> int:
     return (f_year - c_year) * 12 + (f_month - c_month)
 
 
+def compute_price_multiplier(
+    forecast_date: str,
+    cutoff_date: str = "2026-10",
+    events_df: Optional[pd.DataFrame] = None,
+) -> float:
+    """Compute cumulative price multiplier from events_calendar Price Change rules after cutoff.
+
+    Applies documented percentage increases effective on Start_Date (falling back to 2% annual Jan raises
+    when no post-cutoff Price Change events are provided), plus any active temporary surcharge intervals.
+    """
+    f_year = int(str(forecast_date).strip().split("-")[0])
+    if events_df is None or events_df.empty or "Event_Type" not in events_df.columns:
+        if f_year == 2027:
+            return 1.02
+        if f_year >= 2028:
+            return 1.02 * 1.02
+        return 1.0
+
+    ev_pc = events_df[events_df["Event_Type"].astype(str).str.contains("Price", case=False, na=False)].copy()
+    if ev_pc.empty:
+        if f_year == 2027:
+            return 1.02
+        if f_year >= 2028:
+            return 1.02 * 1.02
+        return 1.0
+
+    multiplier = 1.0
+    found_post_cutoff_annual = False
+    for _, ev in ev_pc.iterrows():
+        scope_type = str(ev.get("Scope_Type", "")).strip()
+        if scope_type and scope_type.lower() != "global":
+            continue
+        start_d = str(ev.get("Start_Date", "")).strip()[:7]
+        end_d = str(ev.get("End_Date", "")).strip()[:7] if pd.notna(ev.get("End_Date")) else ""
+        desc = str(ev.get("Description", ""))
+        match = re.search(r"(\d+(?:\.\d+)?)\s*%", desc)
+        if not match or not start_d or start_d <= cutoff_date:
+            continue
+
+        pct = float(match.group(1)) / 100.0
+        is_surcharge = "surcharge" in desc.lower() or "temporary" in desc.lower()
+        if is_surcharge:
+            if start_d <= forecast_date and (not end_d or forecast_date <= end_d):
+                multiplier *= (1.0 + pct)
+        else:
+            found_post_cutoff_annual = True
+            if forecast_date >= start_d:
+                multiplier *= (1.0 + pct)
+
+    if not found_post_cutoff_annual:
+        if f_year == 2027:
+            return multiplier * 1.02
+        if f_year >= 2028:
+            return multiplier * 1.02 * 1.02
+
+    return multiplier
+
+
 def project_sku_price(
     sku_id: str,
     forecast_date: str,
     historical_prices: Dict[str, float],
     sku_master_df: Optional[pd.DataFrame] = None,
     events_df: Optional[pd.DataFrame] = None,
+    cutoff_date: str = "2026-10",
 ) -> float:
     """Project SKU unit price in USD for forecast_date.
 
-    Carries last reliable base price forward and applies documented January list-price increases.
+    Carries last reliable base price forward and applies documented list-price changes from events_df.
     """
     base_price = historical_prices.get(sku_id, 0.0)
 
@@ -68,16 +128,8 @@ def project_sku_price(
         else:
             base_price = 100.0
 
-    # Apply 2% annual price increase on Jan 1, 2027 and Jan 1, 2028
-    f_year = int(forecast_date.split("-")[0])
-    if f_year == 2027:
-        price = base_price * 1.02
-    elif f_year >= 2028:
-        price = base_price * 1.02 * 1.02
-    else:
-        price = base_price
-
-    return round(price, 2)
+    multiplier = compute_price_multiplier(forecast_date, cutoff_date=cutoff_date, events_df=events_df)
+    return round(base_price * multiplier, 2)
 
 
 def generate_final_forecast(
@@ -162,12 +214,7 @@ def generate_final_forecast(
 
     for d, indices in records_by_date.items():
         h = compute_horizon(d, cutoff_date)
-        f_year = int(d.split("-")[0])
-        price_multiplier = 1.0
-        if f_year == 2027:
-            price_multiplier = 1.02
-        elif f_year >= 2028:
-            price_multiplier = 1.02 * 1.02
+        price_multiplier = compute_price_multiplier(d, cutoff_date=cutoff_date, events_df=events_df)
 
         batch_keys: List[Tuple[str, str]] = []
         batch_indices: List[int] = []
