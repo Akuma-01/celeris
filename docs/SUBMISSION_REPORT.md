@@ -83,7 +83,7 @@ The platform automatically discovers and ingests multi-source data, reconstructs
                                                  v
 +----------------------------------------------------------------------------------------------------+
 |  6. Streamlit Industrial Planning Control Tower (app.py)                                           |
-|     - 7 Interactive Cockpit Views, continuous 113-month timelines, row-level Parquet reconciliation |
+|     - 9 Interactive Cockpit Views, continuous 113-month timelines, row-level Parquet reconciliation |
 +----------------------------------------------------------------------------------------------------+
 ```
 
@@ -238,13 +238,15 @@ All published artifacts are stored in `artifacts/real_run/`:
 
 The Streamlit Control Tower provides supply chain leaders with real-time operational visibility:
 - **Run Selector**: Seamless toggle between `artifacts/real_run`, `artifacts/fixture_run`, or custom runs with live diagnostic badges.
-- **View 1: Executive Overview**: High-level KPIs (Total Demand, Shipped Units, Projected Revenue, Fill Rate %), 113-month continuous timeline (94 historical months + 19 forecast months), and regional demand distribution.
+- **View 1: Executive Overview**: High-level KPIs (Total Demand, Shipped Units, Projected Revenue, Fill Rate %), 113-month continuous Units and Revenue timelines (94 historical months + 19 forecast months), mix breakdowns by Family, Region, and Sales Channel, and CSV export.
 - **View 2: Data Health & Ingestion Audit**: Ingestion signature match status, deduplication audit summary, and regional canonicalization tables.
 - **View 3: Demand & History Explorer**: Deep SKU-level drilldowns comparing raw sales, stockouts, backlog carry-in, and reconstructed unconstrained demand.
-- **View 4: Anomaly & Disruption Monitor**: Stockout root-cause waterfall, macro correlation heatmaps, and event impact overlays.
+- **View 4: Anomaly & Disruption Monitor**: Stockout root-cause waterfall, disruption filtering, and anomaly register.
 - **View 5: Forecast & Accuracy Scorecard**: Multi-fold backtest leaderboards, WAPE/Bias comparisons across candidate models, and residual error distributions.
 - **View 6: Stockouts & Lost Sales Analytics**: Lost sales penalty estimation, unfulfilled order analysis, and fill rate recovery trends.
 - **View 7: Lifecycle & Catalog Planning**: Catalog phase distribution, Powertrain mix, predecessor-to-successor transitions (`Replaces_SKU`), and cold-start ramps.
+- **View 8: Macro Lead/Lag Heatmap**: Interactive cross-correlation matrix across 8 macroeconomic indicators and 0–12 month lead offsets, plus family lag decay curves.
+- **View 9: Planner Exception Queue**: Actionable triage list ranked by exposed demand units across stockout losses, lifecycle conflicts, and fallbacks with CSV download.
 
 ---
 
@@ -257,7 +259,7 @@ source .venv/bin/activate
 # 2. Verify Packaging Installation
 pip install -e .
 
-# 3. Execute Automated Test Suite (43 unit & integration tests)
+# 3. Execute Automated Test Suite (44 unit & integration tests)
 pytest -v
 
 # 4. Run Pipeline from Scratch (Student Data)

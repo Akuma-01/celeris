@@ -159,6 +159,83 @@ def filter_dataframe(df: pd.DataFrame, filters: Dict[str, List[str]]) -> pd.Data
     return filtered
 
 
+def _render_mix_table(df: pd.DataFrame, group_col: str, title: str) -> None:
+    """Render aggregated forecast units and revenue breakdown for a given dimension."""
+    st.markdown(f"#### {title}")
+    if df.empty or group_col not in df.columns:
+        st.caption(f"No {group_col} data matches current filters.")
+        return
+    mix_df = (
+        df.groupby(group_col, as_index=False)[["Units_Sold_Forecast", "Projected_Revenue_USD"]]
+        .sum()
+        .sort_values(by="Units_Sold_Forecast", ascending=False)
+    )
+    st.dataframe(
+        mix_df.style.format({"Units_Sold_Forecast": "{:,}", "Projected_Revenue_USD": "${:,.2f}"}),
+        width="stretch",
+    )
+
+
+def build_planner_exceptions(
+    stockouts_df: pd.DataFrame,
+    anomalies_df: pd.DataFrame,
+    forecast_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Aggregate exposed units across stockouts, lifecycle conflicts, and fallbacks per SKU-Region."""
+    records: List[dict] = []
+
+    if not stockouts_df.empty and {"SKU_ID", "Region"}.issubset(stockouts_df.columns):
+        stk_cols = [c for c in ["Lost_Units", "Backordered_Units"] if c in stockouts_df.columns]
+        if stk_cols:
+            stk_agg = stockouts_df.groupby(["SKU_ID", "Region"], as_index=False)[stk_cols].sum()
+            for _, r in stk_agg.iterrows():
+                lost = float(r.get("Lost_Units", 0.0) or 0.0)
+                back = float(r.get("Backordered_Units", 0.0) or 0.0)
+                exposed = int(round(lost + back))
+                if exposed > 0:
+                    records.append({
+                        "SKU_ID": r["SKU_ID"],
+                        "Region": r["Region"],
+                        "Exception_Type": "Stockout Loss & Backlog Exposure",
+                        "Units_Exposed": exposed,
+                        "Severity": "High" if lost > 0 else "Medium",
+                        "Detail": f"Lost: {lost:,.0f} | Backordered: {back:,.0f}",
+                    })
+
+    if not anomalies_df.empty and {"SKU_ID", "Region", "anomaly_type"}.issubset(anomalies_df.columns):
+        lc_anom = anomalies_df[anomalies_df["anomaly_type"].isin(["PRE_LAUNCH_TRANSACTION", "POST_EOL_TRANSACTION"])]
+        if not lc_anom.empty:
+            for (sku, reg), grp in lc_anom.groupby(["SKU_ID", "Region"]):
+                records.append({
+                    "SKU_ID": sku,
+                    "Region": reg,
+                    "Exception_Type": "Lifecycle Conflict",
+                    "Units_Exposed": len(grp) * 50,
+                    "Severity": "High",
+                    "Detail": f"{len(grp)} out-of-lifecycle transactions ({grp['anomaly_type'].iloc[0]})",
+                })
+
+    if not forecast_df.empty and {"SKU_ID", "Region", "Model_Or_Fallback", "Units_Sold_Forecast"}.issubset(forecast_df.columns):
+        fb_mask = ~forecast_df["Model_Or_Fallback"].isin(["ensemble", "seasonal_naive", "pooled_direct", "intermittent_challenger", "trailing_mean", "lifecycle_post_eol", "lifecycle_pre_launch"])
+        fb_df = forecast_df[fb_mask]
+        if not fb_df.empty:
+            for (sku, reg), grp in fb_df.groupby(["SKU_ID", "Region"]):
+                units = int(grp["Units_Sold_Forecast"].sum())
+                records.append({
+                    "SKU_ID": sku,
+                    "Region": reg,
+                    "Exception_Type": "Predecessor / Cold-Start Fallback",
+                    "Units_Exposed": units,
+                    "Severity": "Medium",
+                    "Detail": f"Model: {grp['Model_Or_Fallback'].iloc[0]} across {len(grp)} months",
+                })
+
+    if not records:
+        return pd.DataFrame(columns=["SKU_ID", "Region", "Exception_Type", "Units_Exposed", "Severity", "Detail"])
+
+    return pd.DataFrame(records).sort_values(by="Units_Exposed", ascending=False).reset_index(drop=True)
+
+
 def main():
     # Sidebar: Data Source & Run Information
     st.sidebar.markdown("### ⚡ CELERIS AUTOMOBILI")
@@ -257,6 +334,8 @@ def main():
             "5. Forecast & Accuracy",
             "6. Stockouts & Lost Sales",
             "7. Lifecycle Planning",
+            "8. Macro Lead/Lag Heatmap",
+            "9. Planner Exceptions",
         ],
     )
 
@@ -296,6 +375,8 @@ def main():
                 "Revenue_USD": "sum",
             })
             .rename(columns={"Units_Sold": "Historical Shipments", "reconstructed_demand": "Reconstructed Demand"})
+            if not filt_history.empty
+            else pd.DataFrame(columns=["Date", "Historical Shipments", "Reconstructed Demand", "Revenue_USD"])
         )
 
         fct_monthly = (
@@ -305,12 +386,15 @@ def main():
                 "Projected_Revenue_USD": "sum",
             })
             .rename(columns={"Units_Sold_Forecast": "Point Forecast", "Projected_Revenue_USD": "Projected Revenue"})
+            if not filt_forecast.empty
+            else pd.DataFrame(columns=["Date", "Point Forecast", "Projected Revenue"])
         )
 
         # Melt for clean Altair visualization
         timeline_df = pd.merge(hist_monthly, fct_monthly, on="Date", how="outer").sort_values(by="Date").reset_index(drop=True)
 
         chart_data = []
+        rev_data = []
         for _, r in timeline_df.iterrows():
             d = r["Date"]
             is_forecast = d >= "2026-11"
@@ -320,66 +404,86 @@ def main():
                 chart_data.append({"Date": d, "Units": r["Reconstructed Demand"], "Series": "Reconstructed True Demand", "Section": "History"})
             if pd.notna(r.get("Point Forecast")):
                 chart_data.append({"Date": d, "Units": r["Point Forecast"], "Series": "Final Point Forecast", "Section": "Forecast"})
+            if pd.notna(r.get("Revenue_USD")):
+                rev_data.append({"Date": d, "Revenue_USD": r["Revenue_USD"], "Series": "Observed Revenue (USD)", "Section": "History"})
+            if pd.notna(r.get("Projected Revenue")):
+                rev_data.append({"Date": d, "Revenue_USD": r["Projected Revenue"], "Series": "Projected Forecast Revenue (USD)", "Section": "Forecast"})
 
-        cdf = pd.DataFrame(chart_data)
-        if not cdf.empty:
-            line_chart = (
-                alt.Chart(cdf)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("Date:N", title="Delivery Month (YYYY-MM)", axis=alt.Axis(labelAngle=-45)),
-                    y=alt.Y("Units:Q", title="Monthly Units"),
-                    color=alt.Color("Series:N", scale=alt.Scale(
-                        domain=["Cleaned Shipments", "Reconstructed True Demand", "Final Point Forecast"],
-                        range=["#64748B", "#0284C7", "#E11D48"],
-                    )),
-                    strokeDash=alt.condition(
-                        alt.datum.Series == "Final Point Forecast",
-                        alt.value([6, 4]),
-                        alt.value([0]),
-                    ),
-                    tooltip=["Date", "Series", "Units", "Section"],
+        tab_units, tab_rev = st.tabs(["Units Timeline", "Revenue Timeline (USD)"])
+        rule = (
+            alt.Chart(pd.DataFrame([{"Cutoff": "2026-10"}]))
+            .mark_rule(color="#94A3B8", strokeDash=[4, 4], size=2)
+            .encode(x="Cutoff:N")
+        )
+
+        with tab_units:
+            cdf = pd.DataFrame(chart_data)
+            if not cdf.empty:
+                line_chart = (
+                    alt.Chart(cdf)
+                    .mark_line(point=True)
+                    .encode(
+                        x=alt.X("Date:N", title="Delivery Month (YYYY-MM)", axis=alt.Axis(labelAngle=-45)),
+                        y=alt.Y("Units:Q", title="Monthly Units"),
+                        color=alt.Color("Series:N", scale=alt.Scale(
+                            domain=["Cleaned Shipments", "Reconstructed True Demand", "Final Point Forecast"],
+                            range=["#64748B", "#0284C7", "#E11D48"],
+                        )),
+                        strokeDash=alt.condition(
+                            alt.datum.Series == "Final Point Forecast",
+                            alt.value([6, 4]),
+                            alt.value([0]),
+                        ),
+                        tooltip=["Date", "Series", "Units", "Section"],
+                    )
+                    .properties(height=360)
                 )
-                .properties(height=380)
-            )
+                st.altair_chart(line_chart + rule, width="stretch")
+            else:
+                st.info("No unit timeline observations available for the current filter criteria.")
 
-            # Cutoff rule
-            rule = (
-                alt.Chart(pd.DataFrame([{"Cutoff": "2026-10"}]))
-                .mark_rule(color="#94A3B8", strokeDash=[4, 4], size=2)
-                .encode(x="Cutoff:N")
-            )
+        with tab_rev:
+            rdf = pd.DataFrame(rev_data)
+            if not rdf.empty:
+                rev_chart = (
+                    alt.Chart(rdf)
+                    .mark_line(point=True)
+                    .encode(
+                        x=alt.X("Date:N", title="Delivery Month (YYYY-MM)", axis=alt.Axis(labelAngle=-45)),
+                        y=alt.Y("Revenue_USD:Q", title="Monthly Revenue (USD)"),
+                        color=alt.Color("Series:N", scale=alt.Scale(
+                            domain=["Observed Revenue (USD)", "Projected Forecast Revenue (USD)"],
+                            range=["#059669", "#D97706"],
+                        )),
+                        strokeDash=alt.condition(
+                            alt.datum.Series == "Projected Forecast Revenue (USD)",
+                            alt.value([6, 4]),
+                            alt.value([0]),
+                        ),
+                        tooltip=["Date", "Series", "Revenue_USD", "Section"],
+                    )
+                    .properties(height=360)
+                )
+                st.altair_chart(rev_chart + rule, width="stretch")
+            else:
+                st.info("No revenue timeline observations available for the current filter criteria.")
 
-            st.altair_chart(line_chart + rule, width="stretch")
-        else:
-            st.info("No timeline observations available for the current filter criteria.")
-
-        # Mix breakdowns
-        col_m1, col_m2 = st.columns(2)
+        # Mix breakdowns across Family, Region, and Sales Channel
+        col_m1, col_m2, col_m3 = st.columns(3)
         with col_m1:
-            st.markdown("#### Forecast Mix by Product Family")
-            if not filt_forecast.empty:
-                fam_mix = (
-                    filt_forecast.groupby("Product_Family")[["Units_Sold_Forecast", "Projected_Revenue_USD"]]
-                    .sum()
-                    .reset_index()
-                )
-                st.dataframe(
-                    fam_mix.style.format({"Units_Sold_Forecast": "{:,}", "Projected_Revenue_USD": "${:,.2f}"}),
-                    width="stretch",
-                )
+            _render_mix_table(filt_forecast, "Product_Family", "Mix by Product Family")
         with col_m2:
-            st.markdown("#### Forecast Mix by Region")
-            if not filt_forecast.empty:
-                reg_mix = (
-                    filt_forecast.groupby("Region")[["Units_Sold_Forecast", "Projected_Revenue_USD"]]
-                    .sum()
-                    .reset_index()
-                )
-                st.dataframe(
-                    reg_mix.style.format({"Units_Sold_Forecast": "{:,}", "Projected_Revenue_USD": "${:,.2f}"}),
-                    width="stretch",
-                )
+            _render_mix_table(filt_forecast, "Region", "Mix by Region")
+        with col_m3:
+            _render_mix_table(filt_forecast, "Sales_Channel", "Mix by Sales Channel")
+
+        if not filt_forecast.empty:
+            st.download_button(
+                label="Download Filtered Forecast CSV",
+                data=filt_forecast.to_csv(index=False).encode("utf-8"),
+                file_name="celeris_filtered_forecast.csv",
+                mime="text/csv",
+            )
 
     # VIEW 2: DATA HEALTH
     elif view == "2. Data Health":
@@ -804,6 +908,101 @@ def main():
             st.dataframe(sku_master, width="stretch")
         else:
             st.info("No SKU master data found.")
+
+    # VIEW 8: MACRO LEAD/LAG HEATMAP (Optional View 3)
+    elif view == "8. Macro Lead/Lag Heatmap":
+        st.markdown('<h1 class="main-header">Macroeconomic Lead/Lag Heatmap</h1>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sub-header">Cross-correlation associations across 8 macroeconomic indicators and 0–12 month lead offsets per Product Family.</p>',
+            unsafe_allow_html=True,
+        )
+
+        macro_df = filt_macro if not filt_macro.empty else data.get("macro_lead_lag", pd.DataFrame())
+        if not macro_df.empty:
+            lag_opts = sorted(macro_df["Lag_Months"].unique().tolist())
+            sel_lag = st.select_slider("Inspect Lead Lag (Months Ahead)", options=lag_opts, value=lag_opts[0])
+            lag_slice = macro_df[macro_df["Lag_Months"] == sel_lag]
+
+            heat = (
+                alt.Chart(lag_slice)
+                .mark_rect()
+                .encode(
+                    x=alt.X("Indicator:N", axis=alt.Axis(labelAngle=-35)),
+                    y=alt.Y("Product_Family:N"),
+                    color=alt.Color("Correlation:Q", scale=alt.Scale(scheme="redblue", domain=[-1.0, 1.0])),
+                    tooltip=["Product_Family", "Indicator", "Lag_Months", "Correlation", "Best_Indicator", "Best_Lag"],
+                )
+                .properties(height=360)
+            )
+            st.altair_chart(heat, width="stretch")
+
+            st.markdown("---")
+            col_hm1, col_hm2 = st.columns(2)
+            with col_hm1:
+                st.subheader("Lag Decay Curve by Family")
+                fam_choices = sorted(macro_df["Product_Family"].unique().tolist())
+                sel_fam_macro = st.selectbox("Select Family", options=fam_choices)
+                fam_curve = macro_df[macro_df["Product_Family"] == sel_fam_macro]
+                curve = (
+                    alt.Chart(fam_curve)
+                    .mark_line(point=True)
+                    .encode(
+                        x=alt.X("Lag_Months:Q", title="Lead Lag (Months)"),
+                        y=alt.Y("Correlation:Q", title="Pearson Correlation"),
+                        color=alt.Color("Indicator:N"),
+                        tooltip=["Indicator", "Lag_Months", "Correlation"],
+                    )
+                    .properties(height=300)
+                )
+                st.altair_chart(curve, width="stretch")
+
+            with col_hm2:
+                st.subheader("Best Leading Indicator per Family")
+                best_tbl = (
+                    macro_df[macro_df["Is_Best_For_Family"]]
+                    [["Product_Family", "Best_Indicator", "Best_Lag", "Best_Correlation"]]
+                    .drop_duplicates()
+                    .sort_values(by="Best_Correlation", key=lambda s: s.abs(), ascending=False)
+                )
+                st.dataframe(best_tbl, width="stretch")
+        else:
+            st.info("No macroeconomic lead/lag records available.")
+
+    # VIEW 9: PLANNER EXCEPTIONS (Optional View 4)
+    elif view == "9. Planner Exceptions":
+        st.markdown('<h1 class="main-header">Planner Exception Queue</h1>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sub-header">Actionable exception triage ranked by exposed demand units across stockout losses, lifecycle conflicts, and fallbacks.</p>',
+            unsafe_allow_html=True,
+        )
+
+        exc_df = build_planner_exceptions(filt_stockouts, filt_anomalies, filt_forecast)
+        if not exc_df.empty:
+            e1, e2, e3 = st.columns(3)
+            with e1:
+                st.metric("Total Exceptions", f"{len(exc_df):,}")
+            with e2:
+                high_cnt = int((exc_df["Severity"] == "High").sum())
+                st.metric("High Severity Items", f"{high_cnt:,}")
+            with e3:
+                tot_exp = int(exc_df["Units_Exposed"].sum())
+                st.metric("Total Units Exposed", f"{tot_exp:,} units")
+
+            sel_exc_types = st.multiselect(
+                "Filter Exception Types",
+                options=sorted(exc_df["Exception_Type"].unique().tolist()),
+                default=[],
+            )
+            disp_exc = exc_df[exc_df["Exception_Type"].isin(sel_exc_types)] if sel_exc_types else exc_df
+            st.dataframe(disp_exc, width="stretch")
+            st.download_button(
+                label="Download Planner Exceptions CSV",
+                data=disp_exc.to_csv(index=False).encode("utf-8"),
+                file_name="celeris_planner_exceptions.csv",
+                mime="text/csv",
+            )
+        else:
+            st.success("Zero active planner exceptions for the current filter selection.")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ A production-grade, local batch forecasting pipeline and interactive Streamlit c
 
 The architecture follows a decoupled batch-and-dashboard pattern:
 1. **Batch Pipeline (`celeris`)**: Ingests multi-source inputs, resolves schema roles, standardizes labels/dates, deduplicates transactions by latest load timestamp, reconstructs true unconstrained demand from stockouts/backlogs, executes a 19-month expanding-origin backtesting protocol across 3 folds, verifies leakage safety, and publishes typed Parquet artifacts and a competition-ready `submission.csv`.
-2. **Interactive Control Tower (`app.py`)**: A Streamlit application rendering 5 Core views with shared global filters (Family, SKU, Region, Channel, Customer), continuous 113-month timelines, and verified row-level reconciliation against the underlying published Parquet files.
+2. **Interactive Control Tower (`app.py`)**: A Streamlit application rendering 9 views (5 Core + 4 Optional views) with shared global filters (Family, SKU, Region, Channel, Customer), continuous 113-month unit and revenue timelines, CSV export, and verified row-level reconciliation against published Parquet files.
 
 ```mermaid
 flowchart LR
@@ -172,4 +172,5 @@ The pipeline was executed against the authoritative 248,248-row historical extra
 | 13 | Advanced | **Hierarchical scoped events** | **PASSED** | `match_scoped_events` supports Global, Region, Family, Channel, and Customer scope matching. |
 | 14 | Advanced | **Dashboard View 6: Stockouts & Lost Sales** | **PASSED** | Unconstrained requested demand, shipments, backorders, lost sales, fill rate % timeline, and root-cause breakdown. |
 | 15 | Advanced | **Dashboard View 7: Lifecycle Planning** | **PASSED** | Catalog lifecycle phase distribution, Powertrain mix, predecessor-successor replacement links (`Replaces_SKU`), and cold-start forecast ramps. |
+| 16 | Expert | **Dashboard Views 8–9: Macro Heatmap & Exceptions** | **PASSED** | Interactive 8-indicator × 12-lag correlation heatmap, lag decay curve, planner exception queue ranked by exposed units, and CSV exports. |
 | 16 | Real Data | **Real-data training & submission** | **PASSED** | Ingested 248,248 rows of historical transactions from `student_data/train.csv`, evaluated all 5 candidate models across 3 backtest folds, generated 58,219 final predictions in `submission.csv` (2,593,751 total units), and published all 9 artifacts to `artifacts/real_run/`. |

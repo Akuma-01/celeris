@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app import load_data, filter_dataframe
+from app import build_planner_exceptions, load_data, filter_dataframe
 
 
 @pytest.fixture
@@ -122,8 +122,8 @@ def test_real_run_artifacts_loading_and_reconciliation():
     assert int(forecast_df["Units_Sold_Forecast"].sum()) == int(sub_df["Units_Sold_Forecast"].sum())
 
 
-def test_dashboard_all_seven_views_render_cleanly():
-    """Verify all 7 Streamlit control tower views render with zero exceptions and zero deprecation warnings."""
+def test_dashboard_all_nine_views_render_cleanly():
+    """Verify all 9 Streamlit control tower views render with zero exceptions and zero deprecation warnings."""
     import warnings
     from streamlit.testing.v1 import AppTest
 
@@ -134,9 +134,21 @@ def test_dashboard_all_seven_views_render_cleanly():
         at.run()
         assert not at.exception
         view_radio = at.sidebar.radio[0]
-        assert len(view_radio.options) == 7
+        assert len(view_radio.options) == 9
         for opt in view_radio.options:
             view_radio.set_value(opt).run()
             assert not at.exception
         app_deprecations = [w for w in caught if "app.py" in (w.filename or "")]
         assert len(app_deprecations) == 0
+
+
+def test_build_planner_exceptions_ranking(published_data):
+    """Verify planner exceptions rank highest-exposed items first and return clean schema."""
+    exc = build_planner_exceptions(
+        published_data.get("stockouts", pd.DataFrame()),
+        published_data.get("anomalies", pd.DataFrame()),
+        published_data.get("forecast", pd.DataFrame()),
+    )
+    assert list(exc.columns) == ["SKU_ID", "Region", "Exception_Type", "Units_Exposed", "Severity", "Detail"]
+    if len(exc) > 1:
+        assert exc["Units_Exposed"].is_monotonic_decreasing
